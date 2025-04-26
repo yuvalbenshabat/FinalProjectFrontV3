@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import axios from "axios"; // ← הוספנו
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -10,7 +11,6 @@ function Register() {
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
 
-  // חיפוש ערים מה-API
   useEffect(() => {
     const fetchCities = async () => {
       if (city.length < 2) {
@@ -24,7 +24,7 @@ function Register() {
           {
             method: "GET",
             headers: {
-              "X-RapidAPI-Key": "demo", // החלף ל-API key שלך
+              "X-RapidAPI-Key": "demo", // שים API Key אמיתי
               "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com"
             }
           }
@@ -42,7 +42,7 @@ function Register() {
     fetchCities();
   }, [city]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password || !username || !city || !phone) {
@@ -50,19 +50,21 @@ function Register() {
       return;
     }
 
-    const existingUsers = JSON.parse(localStorage.getItem("users") || "[]");
-    const emailExists = existingUsers.some((user) => user.email === email);
+    try {
+      const response = await axios.post("http://localhost:3001/register", {
+        email,
+        password,
+        username,
+        phone,
+        city
+      });
 
-    if (emailExists) {
-      alert("האימייל כבר קיים במערכת");
-      return;
+      alert("נרשמת בהצלחה!");
+      navigate("/");
+    } catch (err) {
+      alert(err.response?.data?.message || "שגיאה בהרשמה");
+      console.error("שגיאת שרת:", err);
     }
-
-    const newUser = { email, password, username, city, phone };
-    localStorage.setItem("users", JSON.stringify([...existingUsers, newUser]));
-
-    alert("נרשמת בהצלחה! עכשיו תוכל להתחבר");
-    navigate("/");
   };
 
   return (
@@ -72,7 +74,7 @@ function Register() {
         <form onSubmit={handleSubmit} dir="rtl">
           <input
             type="text"
-            placeholder="שם משתמש"
+            placeholder="שם מלא "
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             style={styles.input}

@@ -7,13 +7,18 @@ function HomePage() {
 
   return (
     <div style={styles.container}>
-   
-
       <div style={styles.card}>
         <img src={logo} alt="BookIt Logo" style={styles.logo} />
+
+        {/* ברכה עם שם המשתמש */}
+        <h2 style={{ direction: "rtl", color: "#555" }}>
+          שלום, {user?.username || "משתמש"} 👋
+        </h2>
+
         <h1 style={styles.title}>
           ברוכים הבאים ל־<span style={{ color: "#f6c90e" }}>BookIt</span>
         </h1>
+
         <p style={styles.text}>
           אפליקציית BookIt נועדה לעזור לקהילות ולמשפחות להשיג בקלות ובחינם ספרי לימוד לילדים — דרך שיתוף ותרומות של ספרים.
         </p>

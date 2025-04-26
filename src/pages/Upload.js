@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
-import * as XLSX from "xlsx";
 import { Html5Qrcode } from "html5-qrcode";
+import { useUser } from "../context/UserContext"; // תעדכן את הנתיב בהתאם
 
 export default function Upload() {
+  const { user } = useUser(); // נשתמש במזהה המשתמש
   const [book, setBook] = useState({
     title: "",
     author: "",
@@ -11,12 +12,11 @@ export default function Upload() {
     condition: ""
   });
 
-  const [approvedBooks, setApprovedBooks] = useState([]);
   const [isApproved, setIsApproved] = useState(null);
   const scannerRef = useRef(null);
 
   useEffect(() => {
-    if (scannerRef.current) return; // 🛑 prevent double initialization
+    if (scannerRef.current) return;
 
     const scanner = new Html5Qrcode("qr-reader");
     Html5Qrcode.getCameras().then((devices) => {
@@ -41,49 +41,38 @@ export default function Upload() {
         scannerRef.current = null;
       }
     };
-  }, [approvedBooks]);
+  }, []);
 
   const cleanScannedBarcode = (barcode) => {
-    return barcode.replace(/\s|-/g, "").replace(/0/g, "").slice(0, -1);
+    const noZeros = barcode.replace(/\s|-/g, "").replace(/0/g, "");
+    return noZeros.length > 1 ? noZeros.slice(0, -1) : noZeros;
   };
 
   const handleBarcodeScanned = (rawBarcode) => {
     const cleaned = cleanScannedBarcode(rawBarcode);
     setBook((prev) => ({ ...prev, barcode: cleaned }));
-    validateAndFillBook(rawBarcode);
+    validateAndFillBook(cleaned);
   };
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    const reader = new FileReader();
-    reader.onload = (evt) => {
-      const bstr = evt.target.result;
-      const wb = XLSX.read(bstr, { type: "binary" });
-      const wsname = wb.SheetNames[0];
-      const ws = wb.Sheets[wsname];
-      const data = XLSX.utils.sheet_to_json(ws, { range: 1 });
-      setApprovedBooks(data);
-    };
-    reader.readAsBinaryString(file);
-  };
+  const validateAndFillBook = async (cleanedBarcode) => {
+    try {
+      const res = await fetch(`http://localhost:3001/api/books/barcode/${cleanedBarcode}`);
+      const data = await res.json();
 
-  const validateAndFillBook = (scannedBarcode) => {
-    const cleanedScanned = cleanScannedBarcode(scannedBarcode);
-    const match = approvedBooks.find(row => {
-      const raw = row["barcode"] ?? "";
-      const cleanedRow = String(raw).replace(/\s|-/g, "").replace(/0/g, "");
-      return cleanedScanned === cleanedRow;
-    });
-    if (match) {
-      setBook((prev) => ({
-        ...prev,
-        title: match["שם ספר"] || "",
-        author: match["שמות המחברים"] || "",
-        grade: match["שכבת גיל"] || "",
-        barcode: scannedBarcode
-      }));
-      setIsApproved(true);
-    } else {
+      if (res.ok && data) {
+        setBook((prev) => ({
+          ...prev,
+          title: data.title || "",
+          author: data.author || "",
+          grade: data.grade || "",
+          barcode: cleanedBarcode
+        }));
+        setIsApproved(true);
+      } else {
+        setIsApproved(false);
+      }
+    } catch (err) {
+      console.error("שגיאה באימות מול השרת:", err);
       setIsApproved(false);
     }
   };
@@ -93,21 +82,57 @@ export default function Upload() {
     const cleanedValue = name === "barcode" ? cleanScannedBarcode(value) : value;
     setBook({ ...book, [name]: cleanedValue });
     if (name === "barcode") {
-      validateAndFillBook(value);
+      validateAndFillBook(cleanedValue);
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!book.condition) {
       alert("נא לבחור את מצב הספר");
       return;
     }
-    if (isApproved) {
-      console.log("📤 נשלח:", book);
-      alert("✅ הספר הועלה בהצלחה!");
-    } else {
+
+    if (!isApproved) {
       alert("⚠️ הספר לא מאושר על ידי משרד החינוך");
+      return;
+    }
+
+    try {
+      const response = await fetch("http://localhost:3001/api/donatedBooks", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          userId: user._id, // ודא שזה מה שאתה שומר בקונטקסט
+          bookTitle: book.title,
+          author: book.author,
+          grade: book.grade,
+          barcode: book.barcode,
+          condition: book.condition
+        })
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert("✅ הספר נשלח ונשמר!");
+        setBook({
+          title: "",
+          author: "",
+          grade: "",
+          barcode: "",
+          condition: ""
+        });
+        setIsApproved(null);
+      } else {
+        alert("שגיאה: " + data.message);
+      }
+    } catch (err) {
+      console.error("שגיאה בשליחה:", err);
+      alert("שגיאה בעת שליחת הספר לשרת.");
     }
   };
 
@@ -115,11 +140,7 @@ export default function Upload() {
     <div style={styles.page}>
       <div style={styles.card}>
         <h2 style={styles.title}>העלאת ספר לתרומה</h2>
-        <p>📁 טען קובץ Excel של משרד החינוך:</p>
-        <input type="file" accept=".xlsx, .xls" onChange={handleFileUpload} />
-
         <div id="qr-reader" style={styles.scanner}></div>
-
         <form onSubmit={handleSubmit} style={styles.form}>
           <label>שם הספר:
             <input type="text" name="title" value={book.title} onChange={handleChange} />

@@ -1,16 +1,26 @@
-import { createContext, useContext, useState } from "react";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const UserContext = createContext(null);
 
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // שם המשתמש
+  const [user, setUser] = useState(null);
 
-  const login = (username) => {
-    setUser({ username });
+  // טען משתמש מה-localStorage כשנכנסים לאתר
+  useEffect(() => {
+    const storedUser = localStorage.getItem("user");
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
+  }, []);
+
+  const login = (userObject) => {
+    setUser(userObject);
+    localStorage.setItem("user", JSON.stringify(userObject));
   };
 
   const logout = () => {
     setUser(null);
+    localStorage.removeItem("user");
   };
 
   return (

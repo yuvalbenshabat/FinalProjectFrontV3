@@ -1,93 +1,185 @@
+// Wishlist.js
 import React, { useState } from "react";
+import "../styles/Wishlist.css";
 
 export default function Wishlist() {
-  const [children, setChildren] = useState([]);
-  const [childName, setChildName] = useState("");
-  const [newBook, setNewBook] = useState({ title: "", grade: "", childId: null });
+  const [children, setChildren] = useState([
+    {
+      id: 1,
+      name: "שקד",
+      wishlist: [
+        {
+          id: 1,
+          title: "חגיגה בצלילים",
+          author: "ש. גולדשטיין",
+        },
+        {
+          id: 2,
+          title: "קסם החלילית",
+          author: "ר. כהן",
+        },
+      ],
+    },
+    {
+      id: 2,
+      name: "נועה",
+      wishlist: [
+        {
+          id: 1,
+          title: "צלילי המוזיקה",
+          author: "א. ברק",
+        },
+        {
+          id: 2,
+          title: "הרפתקאות הצליל",
+          author: "ד. לוי",
+        },
+      ],
+    },
+  ]);
 
-  const addChild = () => {
-    if (childName.trim()) {
-      const newChild = {
-        id: Date.now(),
-        name: childName,
-        wishlist: [],
-      };
-      setChildren([...children, newChild]);
-      setChildName("");
-    }
+  const [newChildName, setNewChildName] = useState("");
+  const [bookOptions] = useState([
+    { barcode: "101", title: "מנגינה מתגלגלת", author: "ש. כהן" },
+    { barcode: "102", title: "קסם הצלילים", author: "ל. לוי" },
+    { barcode: "103", title: "צליל ועוד צליל", author: "י. ישראלי" },
+  ]);
+
+  const [selectedBooks, setSelectedBooks] = useState({});
+  const [openDonors, setOpenDonors] = useState({});
+
+  const handleShowDonors = (childId, bookId) => {
+    const key = `${childId}-${bookId}`;
+    setOpenDonors((prev) => ({ ...prev, [key]: !prev[key] }));
   };
 
-  const addBookToChild = (childId) => {
-    if (newBook.title.trim() && newBook.grade.trim()) {
-      setChildren((prevChildren) =>
-        prevChildren.map((child) =>
-          child.id === childId
-            ? {
-                ...child,
-                wishlist: [
-                  ...child.wishlist,
-                  { id: Date.now(), title: newBook.title, grade: newBook.grade },
-                ],
-              }
-            : child
-        )
-      );
-      setNewBook({ title: "", grade: "", childId: null });
-    }
+  const handleAddChild = () => {
+    if (!newChildName.trim()) return;
+    const newChild = {
+      id: Date.now(),
+      name: newChildName,
+      wishlist: [],
+    };
+    setChildren([...children, newChild]);
+    setNewChildName("");
   };
 
-  const handleBookClick = (book) => {
-    alert(`הצגת רשימת תורמים לספר "${book.title}" לפי מיקום גאוגרפי - יתממש בעתיד`);
-    // future: navigate to donor list for this book
+  const handleAddBook = (childId) => {
+    const selected = selectedBooks[childId];
+    const bookData = bookOptions.find((b) => b.barcode === selected);
+    if (!bookData) return;
+
+    setChildren((prev) =>
+      prev.map((child) =>
+        child.id === childId
+          ? {
+              ...child,
+              wishlist: [
+                ...child.wishlist,
+                {
+                  id: Date.now(),
+                  title: bookData.title,
+                  author: bookData.author,
+                },
+              ],
+            }
+          : child
+      )
+    );
+    setSelectedBooks({ ...selectedBooks, [childId]: "" });
   };
+
+  const handleRemoveBook = (childId, bookId) => {
+    setChildren((prev) =>
+      prev.map((child) =>
+        child.id === childId
+          ? {
+              ...child,
+              wishlist: child.wishlist.filter((book) => book.id !== bookId),
+            }
+          : child
+      )
+    );
+  };
+
+  const mockDonors = ["משה ממרכז", "דינה מצפון", "אבי מירושלים"];
 
   return (
-    <div>
-      <h2>📚 רשימת ספרים חסרים לפי ילדים</h2>
+    <div className="wishlist-container">
+      <h2 className="wishlist-title">📚 רשימת ספרים חסרים</h2>
 
-      <div>
+      <div className="add-child-form">
         <input
           type="text"
           placeholder="שם הילד"
-          value={childName}
-          onChange={(e) => setChildName(e.target.value)}
+          value={newChildName}
+          onChange={(e) => setNewChildName(e.target.value)}
         />
-        <button onClick={addChild}>➕ הוסף ילד</button>
+        <button onClick={handleAddChild}>➕ הוסף ילד</button>
       </div>
 
-      {children.map((child) => (
-        <div key={child.id} style={{ border: "1px solid #ccc", marginTop: 10, padding: 10 }}>
-          <h3>📌 {child.name}</h3>
+      <div className="children-grid">
+        {children.map((child) => (
+          <div key={child.id} className="child-card">
+            <h3 className="child-name">{child.name}</h3>
 
-          <ul>
-            {child.wishlist.map((book) => (
-              <li key={book.id} onClick={() => handleBookClick(book)} style={{ cursor: "pointer" }}>
-                <strong>{book.title}</strong> - {book.grade}
-              </li>
-            ))}
-          </ul>
+            <div className="books-grid">
+              {child.wishlist.map((book) => {
+                const key = `${child.id}-${book.id}`;
+                return (
+                  <div key={book.id} className="book-card">
+                    <div className="book-info">
+                      <p className="book-title">{book.title}</p>
+                      <p className="book-author">✍️ {book.author}</p>
+                    </div>
+                    <div className="book-actions">
+                      <button
+                        className="donors-button"
+                        onClick={() => handleShowDonors(child.id, book.id)}
+                      >
+                        {openDonors[key] ? "הסתר תורמים" : "הצג תורמים"}
+                      </button>
+                      <button
+                        className="remove-button"
+                        onClick={() => handleRemoveBook(child.id, book.id)}
+                      >
+                        📦 הסר
+                      </button>
+                    </div>
+                    {openDonors[key] && (
+                      <div className="donor-list">
+                        <strong>תורמים:</strong>
+                        <ul>
+                          {mockDonors.map((donor, index) => (
+                            <li key={index}>{donor}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
 
-          <div>
-            <input
-              type="text"
-              placeholder="שם הספר"
-              value={newBook.childId === child.id ? newBook.title : ""}
-              onChange={(e) =>
-                setNewBook({ ...newBook, title: e.target.value, childId: child.id })
-              }
-            />
-            <input
-              type="text"
-              placeholder="שכבה"
-              value={newBook.childId === child.id ? newBook.grade : ""}
-              onChange={(e) =>
-                setNewBook({ ...newBook, grade: e.target.value, childId: child.id })
-              }
-            />
-            <button onClick={() => addBookToChild(child.id)}>➕ הוסף ספר</button>
+            <div className="book-selector">
+              <select
+                value={selectedBooks[child.id] || ""}
+                onChange={(e) =>
+                  setSelectedBooks({ ...selectedBooks, [child.id]: e.target.value })
+                }
+              >
+                <option value="">בחר ספר להוספה</option>
+                {bookOptions.map((book) => (
+                  <option key={book.barcode} value={book.barcode}>
+                    {book.title} - {book.author}
+                  </option>
+                ))}
+              </select>
+              <button onClick={() => handleAddBook(child.id)}>הוסף</button>
+            </div>
           </div>
-        </div>
-      ))}
+        ))}
+      </div>
     </div>
   );
 }

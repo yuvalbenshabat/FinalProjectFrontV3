@@ -2,6 +2,7 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useUser } from "../context/UserContext";
+import axios from "axios";
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -9,7 +10,7 @@ function Login() {
   const { login } = useUser();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (!email || !password) {
@@ -17,11 +18,18 @@ function Login() {
       return;
     }
 
-    login(email);
-    navigate("/home");
+    try {
+      const response = await axios.post("http://localhost:3001/login", {
+        email,
+        password
+      });
 
-
-
+      login(response.data.user); // שמור את המשתמש בקונטקסט
+      alert("התחברת בהצלחה!");
+      navigate("/home");
+    } catch (err) {
+      alert(err.response?.data?.message || "שגיאה בשרת");
+    }
   };
 
   return (
