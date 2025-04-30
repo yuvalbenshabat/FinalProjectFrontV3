@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Html5Qrcode } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
@@ -22,26 +22,44 @@ export default function Upload() {
 
     const scanner = new Html5Qrcode("qr-reader");
 
-    scanner.start(
-      { facingMode: "environment" },
-      { fps: 10, qrbox: 250 },
-      (decodedText) => {
-        handleBarcodeScanned(decodedText);
-        scanner.stop();
-      },
-      (errorMessage) => {
-        console.warn("שגיאת סריקה:", errorMessage);
+    Html5Qrcode.getCameras().then((devices) => {
+      if (devices && devices.length) {
+        const backCamera = devices.find(d => d.label.toLowerCase().includes("back")) || devices[devices.length - 1];
+
+        scanner.start(
+          backCamera.id,
+          {
+            fps: 10,
+            qrbox: 250,
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.CODE_128,
+              Html5QrcodeSupportedFormats.EAN_13
+            ]
+          },
+          (decodedText) => {
+            handleBarcodeScanned(decodedText);
+            scanner.stop().then(() => {
+              scannerRef.current = null;
+            });
+          },
+          (errorMessage) => {
+            console.warn("שגיאת סריקה:", errorMessage);
+          }
+        );
+
+        scannerRef.current = scanner;
+      } else {
+        console.error("לא נמצאו מצלמות");
       }
-    ).then(() => {
-      scannerRef.current = scanner;
     }).catch(err => {
-      console.error("שגיאה בהפעלת הסריקה:", err);
+      console.error("שגיאה בקבלת מצלמות:", err);
     });
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop();
-        scannerRef.current = null;
+        scannerRef.current.stop().then(() => {
+          scannerRef.current = null;
+        });
       }
     };
   }, []);
@@ -105,9 +123,7 @@ export default function Upload() {
     try {
       const response = await fetch(`${API_BASE}/api/donatedBooks`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           userId: user._id,
           bookTitle: book.title,
