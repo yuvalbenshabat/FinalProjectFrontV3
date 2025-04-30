@@ -2,7 +2,6 @@ import React, { useState, useRef, useEffect } from "react";
 import { Html5Qrcode } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
 
-// ✅ משתמשים ב־Environment Variable
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function Upload() {
@@ -23,34 +22,51 @@ export default function Upload() {
 
     const scanner = new Html5Qrcode("qr-reader");
 
-    Html5Qrcode.getCameras().then((devices) => {
-      if (devices && devices.length) {
-        const backCamera = devices.find(d => d.label.toLowerCase().includes("back")) || devices[devices.length - 1];
+    Html5Qrcode.getCameras()
+      .then((devices) => {
+        if (!devices || devices.length === 0) {
+          console.error("📷 לא נמצאו מצלמות");
+          return;
+        }
 
-        scanner.start(
-          backCamera.id,
-          { fps: 10, qrbox: 250 },
-          (decodedText) => {
-            handleBarcodeScanned(decodedText);
-            scanner.stop();
-          },
-          (errorMessage) => {
-            console.warn("שגיאת סריקה:", errorMessage);
-          }
+        let backCamera = devices.find((d) =>
+          d.label?.toLowerCase().includes("back")
         );
 
-        scannerRef.current = scanner;
-      } else {
-        console.error("לא נמצאו מצלמות");
-      }
-    }).catch(err => {
-      console.error("שגיאה בקבלת מצלמות:", err);
-    });
+        if (!backCamera) {
+          backCamera = devices.length > 1 ? devices[1] : devices[0];
+        }
+
+        scanner
+          .start(
+            backCamera.id,
+            { fps: 10, qrbox: 250 },
+            (decodedText) => {
+              handleBarcodeScanned(decodedText);
+              scanner.stop().then(() => {
+                scannerRef.current = null;
+              });
+            },
+            (errorMessage) => {
+              console.warn("שגיאת סריקה:", errorMessage);
+            }
+          )
+          .then(() => {
+            scannerRef.current = scanner;
+          })
+          .catch((err) => {
+            console.error("❌ שגיאה בהפעלת סריקה:", err);
+          });
+      })
+      .catch((err) => {
+        console.error("❌ שגיאה בקבלת מצלמות:", err);
+      });
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop();
-        scannerRef.current = null;
+        scannerRef.current.stop().then(() => {
+          scannerRef.current = null;
+        });
       }
     };
   }, []);
