@@ -1,6 +1,9 @@
 import React, { useState, useRef, useEffect } from "react";
 import { Html5Qrcode } from "html5-qrcode";
-import { useUser } from "../context/UserContext"; // תעדכן את הנתיב בהתאם
+import { useUser } from "../context/UserContext";
+
+// ✅ משתמשים ב־Environment Variable
+const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function Upload() {
   const { user } = useUser();
@@ -65,7 +68,7 @@ export default function Upload() {
 
   const validateAndFillBook = async (cleanedBarcode) => {
     try {
-      const res = await fetch(`http://localhost:3001/api/books/barcode/${cleanedBarcode}`);
+      const res = await fetch(`${API_BASE}/api/books/barcode/${cleanedBarcode}`);
       const data = await res.json();
 
       if (res.ok && data) {
@@ -109,7 +112,7 @@ export default function Upload() {
     }
 
     try {
-      const response = await fetch("http://localhost:3001/api/donatedBooks", {
+      const response = await fetch(`${API_BASE}/api/donatedBooks`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json"
