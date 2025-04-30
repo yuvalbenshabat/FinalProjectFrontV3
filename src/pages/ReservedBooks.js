@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 
-// ✅ שימוש ב־Environment Variable
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function ReservedBooks() {
@@ -30,10 +29,15 @@ export default function ReservedBooks() {
   const handleConfirmPickup = async (bookId) => {
     if (!window.confirm("האם אתה בטוח שהספר נמסר בהצלחה?")) return;
     try {
-      await fetch(`${API_BASE}/api/reservedBooks/confirm/${bookId}`, {
+      const res = await fetch(`${API_BASE}/api/reservedBooks/confirm/${bookId}`, {
         method: "DELETE"
       });
-      fetchReservedBooks();
+
+      if (res.ok) {
+        await fetchReservedBooks(); // רענון מיידי
+      } else {
+        alert("❌ שגיאה באישור קבלה");
+      }
     } catch (err) {
       console.error("❌ שגיאה באישור קבלה:", err);
     }
@@ -42,10 +46,15 @@ export default function ReservedBooks() {
   const handleCancelReservation = async (bookId) => {
     if (!window.confirm("האם אתה בטוח שברצונך לבטל את השריון?")) return;
     try {
-      await fetch(`${API_BASE}/api/reservedBooks/cancel/${bookId}`, {
+      const res = await fetch(`${API_BASE}/api/reservedBooks/cancel/${bookId}`, {
         method: "DELETE"
       });
-      fetchReservedBooks();
+
+      if (res.ok) {
+        await fetchReservedBooks(); // רענון מיידי
+      } else {
+        alert("❌ שגיאה בביטול השריון");
+      }
     } catch (err) {
       console.error("❌ שגיאה בביטול שריון:", err);
     }
