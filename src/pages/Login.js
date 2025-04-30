@@ -4,6 +4,9 @@ import { useNavigate, Link } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import axios from "axios";
 
+// ✅ נוספה השורה הזו:
+const API_BASE = process.env.REACT_APP_API_BASE;
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -19,12 +22,13 @@ function Login() {
     }
 
     try {
-      const response = await axios.post("http://localhost:3001/login", {
+      // ✅ שימוש ב־Environment Variable במקום localhost:
+      const response = await axios.post(`${API_BASE}/login`, {
         email,
         password
       });
 
-      login(response.data.user); // שמור את המשתמש בקונטקסט
+      login(response.data.user);
       alert("התחברת בהצלחה!");
       navigate("/home");
     } catch (err) {

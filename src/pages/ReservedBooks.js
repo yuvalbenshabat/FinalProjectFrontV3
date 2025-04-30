@@ -27,7 +27,9 @@ export default function ReservedBooks() {
   const handleConfirmPickup = async (bookId) => {
     if (!window.confirm("האם אתה בטוח שהספר נמסר בהצלחה?")) return;
     try {
-      await fetch(`http://localhost:3001/api/reservedBooks/confirm/${bookId}`, { method: "DELETE" });
+      await fetch(`http://localhost:3001/api/reservedBooks/confirm/${bookId}`, {
+        method: "DELETE"
+      });
       fetchReservedBooks();
     } catch (err) {
       console.error("❌ שגיאה באישור קבלה:", err);
@@ -37,7 +39,9 @@ export default function ReservedBooks() {
   const handleCancelReservation = async (bookId) => {
     if (!window.confirm("האם אתה בטוח שברצונך לבטל את השריון?")) return;
     try {
-      await fetch(`http://localhost:3001/api/reservedBooks/cancel/${bookId}`, { method: "DELETE" });
+      await fetch(`http://localhost:3001/api/reservedBooks/cancel/${bookId}`, {
+        method: "DELETE"
+      });
       fetchReservedBooks();
     } catch (err) {
       console.error("❌ שגיאה בביטול שריון:", err);
