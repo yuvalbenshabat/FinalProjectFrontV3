@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import axios from "axios"; // ← הוספנו
+import axios from "axios";
+
+const API_BASE = process.env.REACT_APP_API_BASE;
 
 function Register() {
   const [email, setEmail] = useState("");
@@ -24,7 +26,7 @@ function Register() {
           {
             method: "GET",
             headers: {
-              "X-RapidAPI-Key": "demo", // שים API Key אמיתי
+              "X-RapidAPI-Key": "demo", // 🔑 אל תשכח להחליף למפתח אמיתי
               "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com"
             }
           }
@@ -51,7 +53,7 @@ function Register() {
     }
 
     try {
-      const response = await axios.post("http://localhost:3001/register", {
+      const response = await axios.post(`${API_BASE}/register`, {
         email,
         password,
         username,
@@ -72,48 +74,14 @@ function Register() {
       <div style={styles.card}>
         <h1 style={styles.logo}>📚 הרשמה ל־BookIt</h1>
         <form onSubmit={handleSubmit} dir="rtl">
-          <input
-            type="text"
-            placeholder="שם מלא "
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            style={styles.input}
-          />
-          <input
-            type="email"
-            placeholder="אימייל"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            style={styles.input}
-          />
-          <input
-            type="password"
-            placeholder="סיסמה"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            style={styles.input}
-          />
-          <input
-            type="tel"
-            placeholder="מספר טלפון"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            style={styles.input}
-          />
-          <input
-            type="text"
-            placeholder="הקלד עיר"
-            value={city}
-            onChange={(e) => setCity(e.target.value)}
-            style={styles.input}
-            list="city-list"
-          />
+          <input type="text" placeholder="שם מלא" value={username} onChange={(e) => setUsername(e.target.value)} style={styles.input} />
+          <input type="email" placeholder="אימייל" value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} />
+          <input type="password" placeholder="סיסמה" value={password} onChange={(e) => setPassword(e.target.value)} style={styles.input} />
+          <input type="tel" placeholder="מספר טלפון" value={phone} onChange={(e) => setPhone(e.target.value)} style={styles.input} />
+          <input type="text" placeholder="הקלד עיר" value={city} onChange={(e) => setCity(e.target.value)} style={styles.input} list="city-list" />
           <datalist id="city-list">
-            {suggestions.map((c, index) => (
-              <option key={index} value={c} />
-            ))}
+            {suggestions.map((c, i) => <option key={i} value={c} />)}
           </datalist>
-
           <button type="submit" style={styles.button}>הירשם</button>
         </form>
         <p style={styles.login}>
