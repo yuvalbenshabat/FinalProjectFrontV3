@@ -22,51 +22,26 @@ export default function Upload() {
 
     const scanner = new Html5Qrcode("qr-reader");
 
-    Html5Qrcode.getCameras()
-      .then((devices) => {
-        if (!devices || devices.length === 0) {
-          console.error("📷 לא נמצאו מצלמות");
-          return;
-        }
-
-        let backCamera = devices.find((d) =>
-          d.label?.toLowerCase().includes("back")
-        );
-
-        if (!backCamera) {
-          backCamera = devices.length > 1 ? devices[1] : devices[0];
-        }
-
-        scanner
-          .start(
-            backCamera.id,
-            { fps: 10, qrbox: 250 },
-            (decodedText) => {
-              handleBarcodeScanned(decodedText);
-              scanner.stop().then(() => {
-                scannerRef.current = null;
-              });
-            },
-            (errorMessage) => {
-              console.warn("שגיאת סריקה:", errorMessage);
-            }
-          )
-          .then(() => {
-            scannerRef.current = scanner;
-          })
-          .catch((err) => {
-            console.error("❌ שגיאה בהפעלת סריקה:", err);
-          });
-      })
-      .catch((err) => {
-        console.error("❌ שגיאה בקבלת מצלמות:", err);
-      });
+    scanner.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: 250 },
+      (decodedText) => {
+        handleBarcodeScanned(decodedText);
+        scanner.stop();
+      },
+      (errorMessage) => {
+        console.warn("שגיאת סריקה:", errorMessage);
+      }
+    ).then(() => {
+      scannerRef.current = scanner;
+    }).catch(err => {
+      console.error("שגיאה בהפעלת הסריקה:", err);
+    });
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().then(() => {
-          scannerRef.current = null;
-        });
+        scannerRef.current.stop();
+        scannerRef.current = null;
       }
     };
   }, []);
