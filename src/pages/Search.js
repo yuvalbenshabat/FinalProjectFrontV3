@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useUser } from "../context/UserContext";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
@@ -10,7 +10,8 @@ export default function Search() {
     bookTitle: "",
     author: "",
     grade: "",
-    condition: ""
+    condition: "",
+    subject: ""
   });
 
   const [results, setResults] = useState([]);
@@ -32,7 +33,7 @@ export default function Search() {
 
   useEffect(() => {
     fetchBooks();
-  }, [filters]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,6 +68,15 @@ export default function Search() {
     }
   };
 
+  const handleChat = (donorId) => {
+    if (!user) {
+      alert("🔒 עליך להתחבר כדי לשלוח הודעה.");
+      return;
+    }
+
+    window.location.href = `/chat/${donorId}`;
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>
@@ -97,6 +107,14 @@ export default function Search() {
             onChange={handleChange}
             style={styles.input}
           />
+          <input
+            type="text"
+            name="subject"
+            placeholder="מקצוע"
+            value={filters.subject}
+            onChange={handleChange}
+            style={styles.input}
+          />
           <select
             name="condition"
             value={filters.condition}
@@ -108,6 +126,8 @@ export default function Search() {
             <option value="סביר">סביר</option>
             <option value="לא טוב">לא טוב</option>
           </select>
+
+          <button onClick={fetchBooks} style={styles.searchButton}>🔍 בצע חיפוש</button>
         </div>
 
         {loading ? (
@@ -118,14 +138,28 @@ export default function Search() {
               <h3 style={{ marginBottom: "10px" }}>{book.bookTitle}</h3>
               <p>מחבר: {book.author}</p>
               <p>כיתה: {book.grade}</p>
-              <p>תחום: {book.subject || "לא ידוע"}</p>
+              <p>מקצוע: {book.subject || "לא ידוע"}</p>
               <p>מצב: {book.condition}</p>
-              <button 
-                style={styles.reserveButton}
-                onClick={() => handleReserve(book._id)}
-              >
-                📚 שריין ספר
-              </button>
+              <p>תורם: {book.donor?.name || "לא ידוע"}</p>
+              <p>עיר: {book.donor?.city || "לא ידוע"}</p>
+
+              <div style={{ display: "flex", flexDirection: "row-reverse", gap: "10px" }}>
+                <button
+                  style={styles.reserveButton}
+                  onClick={() => handleReserve(book._id)}
+                >
+                  📚 שריין ספר
+                </button>
+
+                {book.donor?._id && (
+                  <button
+                    style={styles.chatButton}
+                    onClick={() => handleChat(book.donor._id)}
+                  >
+                    💬 צ'אט עם התורם
+                  </button>
+                )}
+              </div>
             </div>
           ))
         ) : (
@@ -172,6 +206,16 @@ const styles = {
     border: "1px solid #ccc",
     fontSize: "16px"
   },
+  searchButton: {
+    padding: "10px 20px",
+    backgroundColor: "#1d72b8",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "16px",
+    cursor: "pointer",
+    gridColumn: "1 / -1"
+  },
   bookCard: {
     backgroundColor: "#e6ecff",
     padding: "20px",
@@ -181,11 +225,19 @@ const styles = {
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
   },
   reserveButton: {
-    marginTop: "10px",
     padding: "10px",
     border: "none",
     backgroundColor: "#4CAF50",
     color: "white",
+    borderRadius: "8px",
+    fontSize: "16px",
+    cursor: "pointer"
+  },
+  chatButton: {
+    padding: "10px",
+    backgroundColor: "#2196F3",
+    color: "white",
+    border: "none",
     borderRadius: "8px",
     fontSize: "16px",
     cursor: "pointer"
