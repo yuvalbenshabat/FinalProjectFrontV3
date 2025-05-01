@@ -30,10 +30,12 @@ export default function Upload() {
           backCamera.id,
           {
             fps: 10,
-            qrbox: 250,
+            qrbox: { width: 300, height: 100 },
+            aspectRatio: window.innerWidth / window.innerHeight,
             formatsToSupport: [
               Html5QrcodeSupportedFormats.CODE_128,
-              Html5QrcodeSupportedFormats.EAN_13
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8
             ]
           },
           (decodedText) => {
