@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { useUser } from "../context/UserContext"; // ✅ ייבוא המשתמש
+import { useUser } from "../context/UserContext";
+
+const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function Search() {
-  const { user } = useUser(); // ✅ שליפת מידע על המשתמש
+  const { user } = useUser();
 
   const [filters, setFilters] = useState({
     bookTitle: "",
@@ -10,6 +12,7 @@ export default function Search() {
     grade: "",
     condition: ""
   });
+
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -17,7 +20,7 @@ export default function Search() {
     try {
       setLoading(true);
       const query = new URLSearchParams(filters).toString();
-      const res = await fetch(`http://localhost:3001/api/donatedBooks?${query}`);
+      const res = await fetch(`${API_BASE}/api/donatedBooks?${query}`);
       const data = await res.json();
       setResults(data);
     } catch (error) {
@@ -33,10 +36,7 @@ export default function Search() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({
-      ...prev,
-      [name]: value
-    }));
+    setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleReserve = async (bookId) => {
@@ -49,19 +49,15 @@ export default function Search() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`http://localhost:3001/api/reservedBooks/reserve/${bookId}`, {
+      const response = await fetch(`${API_BASE}/api/reservedBooks/reserve/${bookId}`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          reservedBy: user._id // ✅ שולח את ה-ID האמיתי
-        })
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reservedBy: user._id })
       });
 
       if (response.ok) {
         alert("✅ הספר שוריין בהצלחה!");
-        fetchBooks(); // רענון אחרי שריון
+        fetchBooks();
       } else {
         alert("❌ שגיאה בשריון הספר.");
       }
