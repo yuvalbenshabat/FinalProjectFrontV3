@@ -1,5 +1,5 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Html5Qrcode, Html5QrcodeSupportedFormats } from "html5-qrcode";
+import React, { useEffect, useRef, useState } from "react";
+import { Html5QrcodeScanner } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
@@ -20,48 +20,26 @@ export default function Upload() {
   useEffect(() => {
     if (scannerRef.current) return;
 
-    const scanner = new Html5Qrcode("qr-reader");
-
-    Html5Qrcode.getCameras().then((devices) => {
-      if (devices && devices.length) {
-        const backCamera = devices.find(d => d.label.toLowerCase().includes("back")) || devices[devices.length - 1];
-
-        scanner.start(
-          backCamera.id,
-          {
-            fps: 10,
-            qrbox: { width: 300, height: 100 },
-            aspectRatio: window.innerWidth / window.innerHeight,
-            formatsToSupport: [
-              Html5QrcodeSupportedFormats.CODE_128,
-              Html5QrcodeSupportedFormats.EAN_13,
-              Html5QrcodeSupportedFormats.EAN_8
-            ]
-          },
-          (decodedText) => {
-            handleBarcodeScanned(decodedText);
-            scanner.stop().then(() => {
-              scannerRef.current = null;
-            });
-          },
-          (errorMessage) => {
-            console.warn("שגיאת סריקה:", errorMessage);
-          }
-        );
-
-        scannerRef.current = scanner;
-      } else {
-        console.error("לא נמצאו מצלמות");
-      }
-    }).catch(err => {
-      console.error("שגיאה בקבלת מצלמות:", err);
+    scannerRef.current = new Html5QrcodeScanner("qr-reader", {
+      fps: 10,
+      qrbox: { width: 300, height: 100 },
+      rememberLastUsedCamera: true,
+      supportedScanTypes: [Html5QrcodeScanner.SCAN_TYPE_CAMERA]
     });
+
+    scannerRef.current.render(
+      (decodedText) => {
+        handleBarcodeScanned(decodedText);
+        scannerRef.current.clear();
+      },
+      (errorMessage) => {
+        console.warn("שגיאת סריקה:", errorMessage);
+      }
+    );
 
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.stop().then(() => {
-          scannerRef.current = null;
-        });
+        scannerRef.current.clear();
       }
     };
   }, []);
