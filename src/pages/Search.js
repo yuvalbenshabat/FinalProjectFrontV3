@@ -16,7 +16,7 @@ export default function Search() {
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [openDonorId, setOpenDonorId] = useState(null); // לשונית פתוחה
+  const [openDonorId, setOpenDonorId] = useState(null);
 
   const fetchBooks = async () => {
     try {
@@ -119,11 +119,11 @@ export default function Search() {
                 {openDonorId === book._id ? "⬆️ הסתר פרטי תורם" : "⬇️ הצג פרטי תורם"}
               </button>
 
-              {openDonorId === book._id && book.donor && (
+              {openDonorId === book._id && book.userId && (
                 <div style={styles.donorBox}>
-                  <p>שם: {book.donor.name}</p>
-                  <p>עיר: {book.donor.city}</p>
-                  <button style={styles.chatButton} onClick={() => handleChat(book.donor._id)}>
+                  <p>שם: {book.userId.name || "לא ידוע"}</p>
+                  <p>עיר: {book.userId.city || "לא ידוע"}</p>
+                  <button style={styles.chatButton} onClick={() => handleChat(book.userId._id)}>
                     💬 צ'אט עם התורם
                   </button>
                 </div>
