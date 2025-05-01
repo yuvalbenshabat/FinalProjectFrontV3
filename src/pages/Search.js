@@ -123,6 +123,7 @@ export default function Search() {
                 <div style={styles.donorBox}>
                   <p>שם: {book.donor.username || "לא ידוע"}</p>
                   <p>עיר: {book.donor.city || "לא ידוע"}</p>
+                  <p>טלפון: {book.donor.phone || "לא זמין"}</p>
                   <button style={styles.chatButton} onClick={() => handleChat(book.userId)}>
                     💬 צ'אט עם התורם
                   </button>
