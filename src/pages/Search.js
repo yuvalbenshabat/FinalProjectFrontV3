@@ -10,11 +10,13 @@ export default function Search() {
     bookTitle: "",
     author: "",
     grade: "",
-    condition: ""
+    condition: "",
+    subject: ""
   });
 
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [openDonorId, setOpenDonorId] = useState(null); // לשונית פתוחה
 
   const fetchBooks = async () => {
     try {
@@ -32,11 +34,23 @@ export default function Search() {
 
   useEffect(() => {
     fetchBooks();
-  }, [filters]);
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleDonor = (bookId) => {
+    setOpenDonorId(prev => prev === bookId ? null : bookId);
+  };
+
+  const handleChat = (donorId) => {
+    if (!user) {
+      alert("🔒 עליך להתחבר כדי לשלוח הודעה.");
+      return;
+    }
+    window.location.href = `/chat/${donorId}`;
   };
 
   const handleReserve = async (bookId) => {
@@ -73,41 +87,17 @@ export default function Search() {
         <h2 style={styles.title}>🔍 חיפוש ספרים לתרומה</h2>
 
         <div style={styles.filters}>
-          <input
-            type="text"
-            name="author"
-            placeholder="מחבר"
-            value={filters.author}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="text"
-            name="bookTitle"
-            placeholder="שם הספר"
-            value={filters.bookTitle}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="text"
-            name="grade"
-            placeholder="כיתה"
-            value={filters.grade}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <select
-            name="condition"
-            value={filters.condition}
-            onChange={handleChange}
-            style={styles.input}
-          >
+          <input type="text" name="author" placeholder="מחבר" value={filters.author} onChange={handleChange} style={styles.input} />
+          <input type="text" name="bookTitle" placeholder="שם הספר" value={filters.bookTitle} onChange={handleChange} style={styles.input} />
+          <input type="text" name="grade" placeholder="כיתה" value={filters.grade} onChange={handleChange} style={styles.input} />
+          <input type="text" name="subject" placeholder="מקצוע" value={filters.subject} onChange={handleChange} style={styles.input} />
+          <select name="condition" value={filters.condition} onChange={handleChange} style={styles.input}>
             <option value="">מצב הספר</option>
             <option value="טוב">טוב</option>
             <option value="סביר">סביר</option>
             <option value="לא טוב">לא טוב</option>
           </select>
+          <button onClick={fetchBooks} style={styles.searchButton}>🔍 בצע חיפוש</button>
         </div>
 
         {loading ? (
@@ -115,17 +105,29 @@ export default function Search() {
         ) : results.length > 0 ? (
           results.map((book) => (
             <div key={book._id} style={styles.bookCard}>
-              <h3 style={{ marginBottom: "10px" }}>{book.bookTitle}</h3>
+              <h3>{book.bookTitle}</h3>
               <p>מחבר: {book.author}</p>
               <p>כיתה: {book.grade}</p>
-              <p>תחום: {book.subject || "לא ידוע"}</p>
+              <p>מקצוע: {book.subject || "לא ידוע"}</p>
               <p>מצב: {book.condition}</p>
-              <button 
-                style={styles.reserveButton}
-                onClick={() => handleReserve(book._id)}
-              >
+
+              <button style={styles.reserveButton} onClick={() => handleReserve(book._id)}>
                 📚 שריין ספר
               </button>
+
+              <button style={styles.donorToggleButton} onClick={() => toggleDonor(book._id)}>
+                {openDonorId === book._id ? "⬆️ הסתר פרטי תורם" : "⬇️ הצג פרטי תורם"}
+              </button>
+
+              {openDonorId === book._id && book.donor && (
+                <div style={styles.donorBox}>
+                  <p>שם: {book.donor.name}</p>
+                  <p>עיר: {book.donor.city}</p>
+                  <button style={styles.chatButton} onClick={() => handleChat(book.donor._id)}>
+                    💬 צ'אט עם התורם
+                  </button>
+                </div>
+              )}
             </div>
           ))
         ) : (
@@ -172,6 +174,16 @@ const styles = {
     border: "1px solid #ccc",
     fontSize: "16px"
   },
+  searchButton: {
+    padding: "10px 20px",
+    backgroundColor: "#1d72b8",
+    color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "16px",
+    cursor: "pointer",
+    gridColumn: "1 / -1"
+  },
   bookCard: {
     backgroundColor: "#e6ecff",
     padding: "20px",
@@ -183,9 +195,36 @@ const styles = {
   reserveButton: {
     marginTop: "10px",
     padding: "10px",
-    border: "none",
     backgroundColor: "#4CAF50",
     color: "white",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "16px",
+    cursor: "pointer"
+  },
+  donorToggleButton: {
+    marginTop: "10px",
+    marginRight: "10px",
+    padding: "8px",
+    backgroundColor: "#FFD700",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer"
+  },
+  donorBox: {
+    marginTop: "10px",
+    padding: "15px",
+    backgroundColor: "#fff9e6",
+    borderRadius: "10px",
+    textAlign: "right",
+    boxShadow: "0 1px 6px rgba(0,0,0,0.1)"
+  },
+  chatButton: {
+    marginTop: "10px",
+    padding: "10px",
+    backgroundColor: "#2196F3",
+    color: "white",
+    border: "none",
     borderRadius: "8px",
     fontSize: "16px",
     cursor: "pointer"
