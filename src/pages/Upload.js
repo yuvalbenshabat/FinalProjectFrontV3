@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Html5QrcodeScanner } from "html5-qrcode";
+import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
@@ -24,13 +24,14 @@ export default function Upload() {
       fps: 10,
       qrbox: { width: 300, height: 100 },
       rememberLastUsedCamera: true,
-      supportedScanTypes: [Html5QrcodeScanner.SCAN_TYPE_CAMERA]
+      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
     });
 
     scannerRef.current.render(
       (decodedText) => {
         handleBarcodeScanned(decodedText);
         scannerRef.current.clear();
+        scannerRef.current = null;
       },
       (errorMessage) => {
         console.warn("שגיאת סריקה:", errorMessage);
@@ -40,6 +41,7 @@ export default function Upload() {
     return () => {
       if (scannerRef.current) {
         scannerRef.current.clear();
+        scannerRef.current = null;
       }
     };
   }, []);

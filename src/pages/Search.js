@@ -1,19 +1,15 @@
-import React, { useState, useEffect } from "react";
-import { useUser } from "../context/UserContext";
-
-const API_BASE = process.env.REACT_APP_API_BASE;
+import React, { useEffect, useState } from "react";
+import { useUser } from "../context/UserContext"; // ✅ ייבוא המשתמש
 
 export default function Search() {
-  const { user } = useUser();
+  const { user } = useUser(); // ✅ שליפת מידע על המשתמש
 
   const [filters, setFilters] = useState({
     bookTitle: "",
     author: "",
     grade: "",
-    condition: "",
-    subject: ""
+    condition: ""
   });
-
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -21,7 +17,7 @@ export default function Search() {
     try {
       setLoading(true);
       const query = new URLSearchParams(filters).toString();
-      const res = await fetch(`${API_BASE}/api/donatedBooks?${query}`);
+      const res = await fetch(`http://localhost:3001/api/donatedBooks?${query}`);
       const data = await res.json();
       setResults(data);
     } catch (error) {
@@ -33,11 +29,14 @@ export default function Search() {
 
   useEffect(() => {
     fetchBooks();
-  }, []);
+  }, [filters]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFilters((prev) => ({ ...prev, [name]: value }));
+    setFilters((prev) => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleReserve = async (bookId) => {
@@ -50,15 +49,19 @@ export default function Search() {
     if (!confirmed) return;
 
     try {
-      const response = await fetch(`${API_BASE}/api/reservedBooks/reserve/${bookId}`, {
+      const response = await fetch(`http://localhost:3001/api/reservedBooks/reserve/${bookId}`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reservedBy: user._id })
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          reservedBy: user._id // ✅ שולח את ה-ID האמיתי
+        })
       });
 
       if (response.ok) {
         alert("✅ הספר שוריין בהצלחה!");
-        fetchBooks();
+        fetchBooks(); // רענון אחרי שריון
       } else {
         alert("❌ שגיאה בשריון הספר.");
       }
@@ -66,15 +69,6 @@ export default function Search() {
       console.error("❌ שגיאה בעת שריון ספר:", error);
       alert("❌ שגיאה בשרת.");
     }
-  };
-
-  const handleChat = (donorId) => {
-    if (!user) {
-      alert("🔒 עליך להתחבר כדי לשלוח הודעה.");
-      return;
-    }
-
-    window.location.href = `/chat/${donorId}`;
   };
 
   return (
@@ -107,14 +101,6 @@ export default function Search() {
             onChange={handleChange}
             style={styles.input}
           />
-          <input
-            type="text"
-            name="subject"
-            placeholder="מקצוע"
-            value={filters.subject}
-            onChange={handleChange}
-            style={styles.input}
-          />
           <select
             name="condition"
             value={filters.condition}
@@ -126,8 +112,6 @@ export default function Search() {
             <option value="סביר">סביר</option>
             <option value="לא טוב">לא טוב</option>
           </select>
-
-          <button onClick={fetchBooks} style={styles.searchButton}>🔍 בצע חיפוש</button>
         </div>
 
         {loading ? (
@@ -138,28 +122,14 @@ export default function Search() {
               <h3 style={{ marginBottom: "10px" }}>{book.bookTitle}</h3>
               <p>מחבר: {book.author}</p>
               <p>כיתה: {book.grade}</p>
-              <p>מקצוע: {book.subject || "לא ידוע"}</p>
+              <p>תחום: {book.subject || "לא ידוע"}</p>
               <p>מצב: {book.condition}</p>
-              <p>תורם: {book.donor?.name || "לא ידוע"}</p>
-              <p>עיר: {book.donor?.city || "לא ידוע"}</p>
-
-              <div style={{ display: "flex", flexDirection: "row-reverse", gap: "10px" }}>
-                <button
-                  style={styles.reserveButton}
-                  onClick={() => handleReserve(book._id)}
-                >
-                  📚 שריין ספר
-                </button>
-
-                {book.donor?._id && (
-                  <button
-                    style={styles.chatButton}
-                    onClick={() => handleChat(book.donor._id)}
-                  >
-                    💬 צ'אט עם התורם
-                  </button>
-                )}
-              </div>
+              <button 
+                style={styles.reserveButton}
+                onClick={() => handleReserve(book._id)}
+              >
+                📚 שריין ספר
+              </button>
             </div>
           ))
         ) : (
@@ -206,16 +176,6 @@ const styles = {
     border: "1px solid #ccc",
     fontSize: "16px"
   },
-  searchButton: {
-    padding: "10px 20px",
-    backgroundColor: "#1d72b8",
-    color: "white",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "16px",
-    cursor: "pointer",
-    gridColumn: "1 / -1"
-  },
   bookCard: {
     backgroundColor: "#e6ecff",
     padding: "20px",
@@ -225,19 +185,11 @@ const styles = {
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
   },
   reserveButton: {
+    marginTop: "10px",
     padding: "10px",
     border: "none",
     backgroundColor: "#4CAF50",
     color: "white",
-    borderRadius: "8px",
-    fontSize: "16px",
-    cursor: "pointer"
-  },
-  chatButton: {
-    padding: "10px",
-    backgroundColor: "#2196F3",
-    color: "white",
-    border: "none",
     borderRadius: "8px",
     fontSize: "16px",
     cursor: "pointer"
