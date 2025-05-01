@@ -119,11 +119,11 @@ export default function Search() {
                 {openDonorId === book._id ? "⬆️ הסתר פרטי תורם" : "⬇️ הצג פרטי תורם"}
               </button>
 
-              {openDonorId === book._id && book.userId && (
+              {openDonorId === book._id && book.donor && (
                 <div style={styles.donorBox}>
-                  <p>שם: {book.userId.name || "לא ידוע"}</p>
-                  <p>עיר: {book.userId.city || "לא ידוע"}</p>
-                  <button style={styles.chatButton} onClick={() => handleChat(book.userId._id)}>
+                  <p>שם: {book.donor.username || "לא ידוע"}</p>
+                  <p>עיר: {book.donor.city || "לא ידוע"}</p>
+                  <button style={styles.chatButton} onClick={() => handleChat(book.userId)}>
                     💬 צ'אט עם התורם
                   </button>
                 </div>
