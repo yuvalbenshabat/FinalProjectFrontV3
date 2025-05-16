@@ -23,16 +23,19 @@ function Chat() {
 
   // התחברות ל-socket
   useEffect(() => {
-    
-const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
-  transports: ['websocket'],
-});
+    const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
+      transports: ['websocket'],
+    });
 
     setSocket(newSocket);
 
     newSocket.on('receive_private_message', (data) => {
       console.log("📥 התקבלה הודעה חדשה מהשרת:", data);
       setChatMessages((prev) => [...prev, data]);
+    });
+
+    newSocket.on('connect_error', (err) => {
+      console.error('❌ שגיאה בהתחברות ל-socket:', err);
     });
 
     return () => {
@@ -78,35 +81,33 @@ const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
     }
   }, [user]);
 
-  // הצטרפות אוטומטית לחדרים של שיחות קודמות
+  // הצטרפות אוטומטית לחדרים קודמים
   useEffect(() => {
     if (socket && user && recentChats.length > 0) {
       recentChats.forEach(chatUser => {
-        const autoRoomId = [user._id, chatUser._id].sort().join('_');
         socket.emit('join_private_chat', {
           userId: user._id,
           otherUserId: chatUser._id
         });
-        console.log("🔁 הצטרפות אוטומטית לחדר:", autoRoomId);
+        console.log("🔁 הצטרפות אוטומטית לחדר:", [user._id, chatUser._id].sort().join('_'));
       });
     }
   }, [socket, user, recentChats]);
 
-  // טעינת הודעות והצטרפות לחדר עם משתמש נבחר
+  // טעינת הודעות והצטרפות לחדר חדש
   useEffect(() => {
     if (socket && selectedUser && user) {
       const newRoomId = [user._id, selectedUser._id].sort().join('_');
-      console.log("📡 מצטרף ידנית לחדר:", newRoomId);
       setRoomId(newRoomId);
       socket.emit('join_private_chat', {
         userId: user._id,
         otherUserId: selectedUser._id
       });
       fetchMessages(newRoomId);
+      console.log("📡 הצטרפות לחדר:", newRoomId);
     }
   }, [selectedUser, socket, user]);
 
-  // טעינת הודעות מחדר
   const fetchMessages = async (roomId) => {
     try {
       const response = await axios.get(`${API_BASE}/api/messages/room/${roomId}`);
@@ -121,7 +122,7 @@ const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
   }, [chatMessages]);
 
   const sendMessage = () => {
-    if (!socket || !roomId || message.trim() === '') return;
+    if (!socket || !roomId || !user || !selectedUser || message.trim() === '') return;
 
     socket.emit('send_private_message', {
       roomId,
@@ -129,11 +130,12 @@ const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
       sender: user.username,
       timestamp: new Date().toISOString()
     });
+
     setMessage('');
   };
 
   return (
-    <div style={{ padding: 20, maxWidth: 800, margin: '0 auto' }}>
+    <div style={{ padding: 20, maxWidth: 800, margin: '0 auto', direction: 'rtl' }}>
       <h2>💬 צ'אט פרטי</h2>
 
       {recentChats.length > 0 && (
@@ -170,7 +172,7 @@ const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
             const user = users.find(u => u._id === e.target.value);
             setSelectedUser(user);
           }}
-          style={{ padding: 8, width: '100%', marginBottom: 10 }}
+          style={{ padding: 8, width: '100%' }}
         >
           <option value="">בחר משתמש לצ'אט</option>
           {users.map(user => (
@@ -230,7 +232,7 @@ const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
               placeholder="הקלד הודעה..."
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+              onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
               style={{
                 flex: 1,
                 padding: 8,
