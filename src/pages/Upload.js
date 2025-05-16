@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
 
@@ -16,45 +16,11 @@ export default function Upload() {
 
   const [isApproved, setIsApproved] = useState(null);
   const scannerRef = useRef(null);
-
-  useEffect(() => {
-    if (scannerRef.current) return;
-
-    scannerRef.current = new Html5QrcodeScanner("qr-reader", {
-      fps: 10,
-      qrbox: { width: 300, height: 100 },
-      rememberLastUsedCamera: true,
-      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
-    });
-
-    scannerRef.current.render(
-      (decodedText) => {
-        handleBarcodeScanned(decodedText);
-        scannerRef.current.clear();
-        scannerRef.current = null;
-      },
-      (errorMessage) => {
-        console.warn("שגיאת סריקה:", errorMessage);
-      }
-    );
-
-    return () => {
-      if (scannerRef.current) {
-        scannerRef.current.clear();
-        scannerRef.current = null;
-      }
-    };
-  }, []);
+  const alreadyScannedRef = useRef(false);
 
   const cleanScannedBarcode = (barcode) => {
     const noZeros = barcode.replace(/\s|-/g, "").replace(/0/g, "");
     return noZeros.length > 1 ? noZeros.slice(0, -1) : noZeros;
-  };
-
-  const handleBarcodeScanned = (rawBarcode) => {
-    const cleaned = cleanScannedBarcode(rawBarcode);
-    setBook((prev) => ({ ...prev, barcode: cleaned }));
-    validateAndFillBook(cleaned);
   };
 
   const validateAndFillBook = async (cleanedBarcode) => {
@@ -80,10 +46,67 @@ export default function Upload() {
     }
   };
 
+  const handleBarcodeScanned = useCallback(async (rawBarcode) => {
+    if (alreadyScannedRef.current) return;
+    alreadyScannedRef.current = true;
+
+    console.log("📦 barcode raw:", rawBarcode);
+    const cleaned = cleanScannedBarcode(rawBarcode);
+    console.log("✅ cleaned barcode:", cleaned);
+    setBook((prev) => ({ ...prev, barcode: cleaned }));
+    await validateAndFillBook(cleaned);
+  }, []);
+
+  const startScanner = () => {
+    if (scannerRef.current) return;
+
+    const scanner = new Html5QrcodeScanner("qr-reader", {
+      fps: 10,
+      qrbox: { width: 300, height: 100 },
+      rememberLastUsedCamera: true,
+      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA]
+    });
+
+    scanner.render(
+      async (decodedText) => {
+        try {
+          await scanner.clear();
+          scannerRef.current = null;
+        } catch (err) {
+          console.warn("❌ שגיאה בסגירת הסורק:", err);
+        }
+
+        await handleBarcodeScanned(decodedText);
+      },
+      (errorMessage) => {
+        if (
+          !errorMessage.includes("No MultiFormat Readers") &&
+          !errorMessage.includes("parse error")
+        ) {
+          console.warn("⚠️ שגיאת סריקה:", errorMessage);
+        }
+      }
+    );
+
+    scannerRef.current = scanner;
+  };
+
+  useEffect(() => {
+    startScanner();
+
+    return () => {
+      if (scannerRef.current) {
+        scannerRef.current.clear().catch(() => {});
+        scannerRef.current = null;
+      }
+    };
+  }, [handleBarcodeScanned]);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     const cleanedValue = name === "barcode" ? cleanScannedBarcode(value) : value;
     setBook({ ...book, [name]: cleanedValue });
+
     if (name === "barcode") {
       validateAndFillBook(cleanedValue);
     }
@@ -98,7 +121,7 @@ export default function Upload() {
     }
 
     if (!isApproved) {
-      alert("⚠️ הספר לא מאושר על ידי משרד החינוך");
+      alert("⚠ הספר לא מאושר על ידי משרד החינוך");
       return;
     }
 
@@ -128,6 +151,8 @@ export default function Upload() {
           condition: ""
         });
         setIsApproved(null);
+        alreadyScannedRef.current = false;
+        startScanner();
       } else {
         alert("שגיאה: " + data.message);
       }

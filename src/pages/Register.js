@@ -1,54 +1,52 @@
+// גרסה סופית עם סינון כפילויות של ערים בהצעות
 import React, { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import axios from "axios";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
 
-function Register() {
+export default function Register() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [phone, setPhone] = useState("");
   const [city, setCity] = useState("");
+  const [coordinates, setCoordinates] = useState({ lat: null, lng: null });
   const [suggestions, setSuggestions] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchCities = async () => {
-      if (city.length < 2) {
-        setSuggestions([]);
-        return;
-      }
+    if (city.length < 2) return;
 
-      try {
-        const response = await fetch(
-          `https://wft-geo-db.p.rapidapi.com/v1/geo/cities?namePrefix=${city}&countryIds=IL&limit=5&languageCode=he`,
-          {
-            method: "GET",
-            headers: {
-              "X-RapidAPI-Key": "demo", // 🔑 אל תשכח להחליף למפתח אמיתי
-              "X-RapidAPI-Host": "wft-geo-db.p.rapidapi.com"
-            }
-          }
-        );
+    const delayDebounce = setTimeout(() => {
+      fetch(`https://nominatim.openstreetmap.org/search?format=json&addressdetails=1&q=${city}`, {
+        headers: {
+          'User-Agent': 'BookIt/1.0 (support@bookit.local)',
+          'Accept-Language': 'he'
+        }
+      })
+        .then(res => res.json())
+        .then(data => setSuggestions(data))
+        .catch(err => {
+          console.error("שגיאה בשליפת ערים:", err);
+          setSuggestions([]);
+        });
+    }, 500);
 
-        const data = await response.json();
-        const results = data.data.map((item) => item.city);
-        setSuggestions(results);
-      } catch (error) {
-        console.error("שגיאה בטעינת ערים:", error);
-        setSuggestions([]);
-      }
-    };
-
-    fetchCities();
+    return () => clearTimeout(delayDebounce);
   }, [city]);
+
+  const handleSelectCity = (item) => {
+    const name = item.address?.city || item.address?.town || item.address?.village || item.display_name;
+    setCity(name);
+    setCoordinates({ lat: item.lat, lng: item.lon });
+    setSuggestions([]);
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!email || !password || !username || !city || !phone) {
-      alert("נא למלא את כל השדות כולל עיר וטלפון");
+    if (!email || !password || !username || !city || !phone || !coordinates.lat) {
+      alert("נא למלא את כל השדות כולל עיר וקואורדינטות");
       return;
     }
 
@@ -58,7 +56,8 @@ function Register() {
         password,
         username,
         phone,
-        city
+        city,
+        location: coordinates,
       });
 
       alert("נרשמת בהצלחה!");
@@ -69,6 +68,14 @@ function Register() {
     }
   };
 
+  const uniqueSuggestions = suggestions.reduce((acc, item) => {
+    const name = item.address?.city || item.address?.town || item.address?.village || item.display_name;
+    if (!acc.find(i => i.name === name)) {
+      acc.push({ ...item, name });
+    }
+    return acc;
+  }, []);
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>
@@ -78,15 +85,37 @@ function Register() {
           <input type="email" placeholder="אימייל" value={email} onChange={(e) => setEmail(e.target.value)} style={styles.input} />
           <input type="password" placeholder="סיסמה" value={password} onChange={(e) => setPassword(e.target.value)} style={styles.input} />
           <input type="tel" placeholder="מספר טלפון" value={phone} onChange={(e) => setPhone(e.target.value)} style={styles.input} />
-          <input type="text" placeholder="הקלד עיר" value={city} onChange={(e) => setCity(e.target.value)} style={styles.input} list="city-list" />
-          <datalist id="city-list">
-            {suggestions.map((c, i) => <option key={i} value={c} />)}
-          </datalist>
+
+          <input
+            type="text"
+            placeholder="בחר עיר מתוך הרשימה"
+            value={city}
+            onChange={(e) => {
+              setCity(e.target.value);
+              setCoordinates({ lat: null, lng: null });
+            }}
+            style={styles.input}
+          />
+
+          {!coordinates.lat && city && (
+            <p style={{ color: "red", fontSize: "0.8em", marginBottom: "10px" }}>
+              נא לבחור עיר מתוך ההצעות בלבד
+            </p>
+          )}
+
+          {uniqueSuggestions.length > 0 && (
+            <ul style={styles.dropdown}>
+              {uniqueSuggestions.map((item, index) => (
+                <li key={index} style={styles.option} onClick={() => handleSelectCity(item)}>
+                  {item.name}
+                </li>
+              ))}
+            </ul>
+          )}
+
           <button type="submit" style={styles.button}>הירשם</button>
         </form>
-        <p style={styles.login}>
-          כבר יש לך משתמש? <Link to="/">התחבר</Link>
-        </p>
+        <p style={styles.login}>כבר יש לך משתמש? <Link to="/">התחבר</Link></p>
       </div>
     </div>
   );
@@ -135,7 +164,20 @@ const styles = {
     marginTop: "20px",
     fontSize: "0.9rem",
     direction: "rtl"
+  },
+  dropdown: {
+    listStyle: "none",
+    padding: 0,
+    margin: 0,
+    border: "1px solid #ccc",
+    backgroundColor: "#fff",
+    maxHeight: "150px",
+    overflowY: "auto",
+    borderRadius: "5px"
+  },
+  option: {
+    padding: "10px",
+    cursor: "pointer",
+    borderBottom: "1px solid #eee"
   }
 };
-
-export default Register;

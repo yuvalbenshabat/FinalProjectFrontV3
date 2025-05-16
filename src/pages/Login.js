@@ -6,6 +6,7 @@ import axios from "axios";
 
 // ✅ נוספה השורה הזו:
 const API_BASE = process.env.REACT_APP_API_BASE;
+console.log("🔍 API_BASE:", API_BASE);
 
 function Login() {
   const [email, setEmail] = useState("");
@@ -22,16 +23,19 @@ function Login() {
     }
 
     try {
+      console.log("📤 שליחת בקשה להתחברות:", { email, API_BASE });
       // ✅ שימוש ב־Environment Variable במקום localhost:
       const response = await axios.post(`${API_BASE}/login`, {
         email,
         password
       });
+      console.log("📥 תשובה מהשרת:", response.data);
 
       login(response.data.user);
       alert("התחברת בהצלחה!");
       navigate("/home");
     } catch (err) {
+      console.error("❌ שגיאה בהתחברות:", err);
       alert(err.response?.data?.message || "שגיאה בשרת");
     }
   };

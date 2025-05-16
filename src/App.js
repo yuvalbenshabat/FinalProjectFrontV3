@@ -12,19 +12,17 @@ import Home from "./pages/Home";
 import Upload from "./pages/Upload";
 import Wishlist from "./pages/Wishlist";
 import Search from "./pages/Search";
-import ChatPage from "./pages/Chat";
 import { UserProvider, useUser } from "./context/UserContext";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
-import Chat from "./components/Chat";
+import Chat from "./components/Chat"; // ✅ צ'אט מ־components כמו בקוד הראשון
 import ReservedBooks from "./pages/ReservedBooks";
 
 function App() {
   const { user, logout } = useUser();
   const location = useLocation();
-  const navigate = useNavigate(); // ✅ הוסף את זה
+  const navigate = useNavigate();
 
-  // הסתרת navbar בדפי התחברות / הרשמה
   const hideNavbar = location.pathname === "/" || location.pathname === "/register";
 
   return (
@@ -44,7 +42,7 @@ function App() {
               <button
                 onClick={() => {
                   logout();
-                  navigate("/"); // ✅ העברה למסך התחברות
+                  navigate("/");
                 }}
                 style={styles.logoutButton}
               >
@@ -63,10 +61,8 @@ function App() {
           <Route path="/upload" element={<Upload />} />
           <Route path="/wishlist" element={<Wishlist />} />
           <Route path="/search" element={<Search />} />
-          <Route path="/chat" element={<Chat />} />
-          <Route path="/chatpage" element={<ChatPage />} />
+          <Route path="/chat" element={<Chat />} /> {/* ✅ שימוש בצ'אט בדיוק כמו בקוד הראשון */}
           <Route path="/reserved-books" element={<ReservedBooks />} />
-
         </Routes>
       </div>
     </div>

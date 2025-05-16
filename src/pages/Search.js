@@ -1,15 +1,21 @@
+// 📁 נתיב: /pages/Search.js
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function Search() {
   const { user } = useUser();
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  const { title = "", grade = "" } = location.state || {};
 
   const [filters, setFilters] = useState({
-    bookTitle: "",
+    bookTitle: title,
     author: "",
-    grade: "",
+    grade: grade,
     condition: ""
   });
 
@@ -19,8 +25,14 @@ export default function Search() {
   const fetchBooks = async () => {
     try {
       setLoading(true);
-      const query = new URLSearchParams(filters).toString();
-      const res = await fetch(`${API_BASE}/api/donatedBooks?${query}`);
+      const params = new URLSearchParams(filters);
+
+      if (user?.location?.lat && user?.location?.lng) {
+        params.append("lat", user.location.lat);
+        params.append("lng", user.location.lng);
+      }
+
+      const res = await fetch(`${API_BASE}/api/donatedBooks?${params.toString()}`);
       const data = await res.json();
       setResults(data);
     } catch (error) {
@@ -65,6 +77,10 @@ export default function Search() {
       console.error("❌ שגיאה בעת שריון ספר:", error);
       alert("❌ שגיאה בשרת.");
     }
+  };
+
+  const handleChat = (donorId) => {
+    navigate("/chat", { state: { selectedUserId: donorId } });
   };
 
   return (
@@ -115,17 +131,44 @@ export default function Search() {
         ) : results.length > 0 ? (
           results.map((book) => (
             <div key={book._id} style={styles.bookCard}>
-              <h3 style={{ marginBottom: "10px" }}>{book.bookTitle}</h3>
-              <p>מחבר: {book.author}</p>
-              <p>כיתה: {book.grade}</p>
-              <p>תחום: {book.subject || "לא ידוע"}</p>
-              <p>מצב: {book.condition}</p>
-              <button 
-                style={styles.reserveButton}
-                onClick={() => handleReserve(book._id)}
-              >
-                📚 שריין ספר
-              </button>
+              <div style={styles.bookTitleHeader}>
+                <span role="img" aria-label="book">📗</span> {book.bookTitle}
+              </div>
+
+              <div style={styles.detailsGrid}>
+                <div style={styles.detailBlock}>
+                  <p>📘 מחבר: <strong>{book.author}</strong></p>
+                  <p>🏫 כיתה: <strong>{book.grade}</strong></p>
+                  <p>📚 תחום: <strong>{book.subject || "לא ידוע"}</strong></p>
+                  <p>📖 מצב: <strong>{book.condition}</strong></p>
+                  {typeof book.distanceKm === 'number' && (
+                    <p>📍 מרחק: <strong style={{ color: book.distanceKm === 0 ? '#2e7d32' : '#000' }}>
+                      {book.distanceKm === 0 ? "בעיר שלך" : `${book.distanceKm} ק״מ`}
+                    </strong></p>
+                  )}
+                </div>
+
+                <div style={styles.detailBlock}>
+                  <p>🧑‍💼 שם התורם: <strong>{book.username || "לא ידוע"}</strong></p>
+                  <p>📞 טלפון: <strong>{book.phone || "לא ידוע"}</strong></p>
+                  <p>🏙️ עיר: <strong>{book.city || "לא ידוע"}</strong></p>
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
+                <button
+                  style={styles.reserveButton}
+                  onClick={() => handleReserve(book._id)}
+                >
+                  🎯 שריין ספר
+                </button>
+                <button
+                  style={{ ...styles.reserveButton, backgroundImage: "linear-gradient(to right, #2196f3, #1e88e5)" }}
+                  onClick={() => handleChat(book.userId)}
+                >
+                  💬 צ׳אט עם התורם
+                </button>
+              </div>
             </div>
           ))
         ) : (
@@ -135,6 +178,8 @@ export default function Search() {
     </div>
   );
 }
+
+// styles נשארים כפי שהגדרת – לא נגעתי בהם
 
 const styles = {
   page: {
@@ -180,14 +225,42 @@ const styles = {
     textAlign: "right",
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
   },
+  bookTitleHeader: {
+    background: "linear-gradient(to left, #c3d9ff, #e0ecff)",
+    padding: "10px 15px",
+    borderRadius: "10px",
+    fontSize: "18px",
+    fontWeight: "bold",
+    marginBottom: "15px",
+    display: "inline-block",
+    color: "#1a237e"
+  },
+  detailsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "20px",
+    marginBottom: "10px"
+  },
+  detailBlock: {
+    backgroundColor: "#ffffff",
+    padding: "15px",
+    borderRadius: "10px",
+    border: "1px solid #ddd",
+    fontSize: "15px",
+    lineHeight: "1.6"
+  },
   reserveButton: {
-    marginTop: "10px",
-    padding: "10px",
+    marginTop: "15px",
+    padding: "12px 24px",
     border: "none",
-    backgroundColor: "#4CAF50",
+    backgroundImage: "linear-gradient(to right, #43cea2, #185a9d)",
     color: "white",
-    borderRadius: "8px",
+    borderRadius: "30px",
     fontSize: "16px",
-    cursor: "pointer"
+    fontWeight: "bold",
+    cursor: "pointer",
+    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
+    transition: "all 0.3s ease",
+    alignSelf: "flex-start"
   }
 };

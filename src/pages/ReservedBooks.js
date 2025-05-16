@@ -1,10 +1,13 @@
+// 📁 נתיב: /pages/ReservedBooks.js
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
+import { useNavigate } from "react-router-dom";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function ReservedBooks() {
   const { user } = useUser();
+  const navigate = useNavigate();
   const [reservedBooks, setReservedBooks] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -34,7 +37,7 @@ export default function ReservedBooks() {
       });
 
       if (res.ok) {
-        await fetchReservedBooks(); // רענון מיידי
+        await fetchReservedBooks();
       } else {
         alert("❌ שגיאה באישור קבלה");
       }
@@ -51,13 +54,17 @@ export default function ReservedBooks() {
       });
 
       if (res.ok) {
-        await fetchReservedBooks(); // רענון מיידי
+        await fetchReservedBooks();
       } else {
         alert("❌ שגיאה בביטול השריון");
       }
     } catch (err) {
       console.error("❌ שגיאה בביטול שריון:", err);
     }
+  };
+
+  const handleChat = (donorId) => {
+    navigate("/chat", { state: { selectedUserId: donorId } });
   };
 
   return (
@@ -81,6 +88,12 @@ export default function ReservedBooks() {
                 </button>
                 <button onClick={() => handleCancelReservation(book._id)} style={styles.cancel}>
                   ❌ בטל שריון
+                </button>
+                <button
+                  onClick={() => handleChat(book.userId)}
+                  style={{ ...styles.confirm, backgroundColor: '#2196f3' }}
+                >
+                  💬 צ'אט עם התורם
                 </button>
               </div>
             </div>
