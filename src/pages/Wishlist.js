@@ -1,5 +1,4 @@
-// 📁 נתיב: FinalProjectFrontendOnly/src/pages/Wishlist.js
-
+// 📁 נתיב: /pages/Wishlist.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
@@ -19,8 +18,6 @@ export default function Wishlist() {
   const [booksLoading, setBooksLoading] = useState(true);
   const [selectedBooks, setSelectedBooks] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
-  const [openDonors, setOpenDonors] = useState({});
-  const mockDonors = ["משה ממרכז", "דינה מצפון", "אבי מירושלים"];
 
   useEffect(() => {
     axios
@@ -43,9 +40,7 @@ export default function Wishlist() {
       .then(async (res) => {
         const childrenWithWishlists = await Promise.all(
           res.data.map(async (child) => {
-            const wishlistRes = await axios.get(
-              `${API_BASE}/api/wishlist/${child._id}`
-            );
+            const wishlistRes = await axios.get(`${API_BASE}/api/wishlist/${child._id}`);
             return { ...child, wishlist: wishlistRes.data };
           })
         );
