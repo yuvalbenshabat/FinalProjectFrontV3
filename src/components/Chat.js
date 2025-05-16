@@ -23,7 +23,11 @@ function Chat() {
 
   // התחברות ל-socket
   useEffect(() => {
-    const newSocket = io('http://localhost:3001');
+    
+const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
+  transports: ['websocket'],
+});
+
     setSocket(newSocket);
 
     newSocket.on('receive_private_message', (data) => {
