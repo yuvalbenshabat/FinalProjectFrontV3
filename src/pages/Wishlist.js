@@ -1,8 +1,12 @@
+// 📁 נתיב: FinalProjectFrontendOnly/src/pages/Wishlist.js
+
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
 import "../styles/Wishlist.css";
 import { useNavigate } from "react-router-dom";
+
+const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function Wishlist() {
   const { user } = useUser();
@@ -20,7 +24,7 @@ export default function Wishlist() {
 
   useEffect(() => {
     axios
-      .get("http://localhost:3001/api/books")
+      .get(`${API_BASE}/api/books`)
       .then((res) => {
         setBookOptions(res.data);
         setBooksLoading(false);
@@ -35,12 +39,12 @@ export default function Wishlist() {
     if (!user?._id) return;
 
     axios
-      .get(`http://localhost:3001/api/children/${user._id}`)
+      .get(`${API_BASE}/api/children/${user._id}`)
       .then(async (res) => {
         const childrenWithWishlists = await Promise.all(
           res.data.map(async (child) => {
             const wishlistRes = await axios.get(
-              `http://localhost:3001/api/wishlist/${child._id}`
+              `${API_BASE}/api/wishlist/${child._id}`
             );
             return { ...child, wishlist: wishlistRes.data };
           })
@@ -54,7 +58,7 @@ export default function Wishlist() {
     if (!newChildName.trim() || !newChildGrade.trim()) return;
 
     axios
-      .post("http://localhost:3001/api/children", {
+      .post(`${API_BASE}/api/children`, {
         name: newChildName,
         grade: newChildGrade,
         userId: user._id,
@@ -73,7 +77,7 @@ export default function Wishlist() {
     if (!book) return;
 
     axios
-      .post("http://localhost:3001/api/wishlist", {
+      .post(`${API_BASE}/api/wishlist`, {
         childId,
         title: book.title,
         author: book.author,
@@ -93,7 +97,7 @@ export default function Wishlist() {
 
   const handleRemoveBook = (childId, bookId) => {
     axios
-      .delete(`http://localhost:3001/api/wishlist/${bookId}`)
+      .delete(`${API_BASE}/api/wishlist/${bookId}`)
       .then(() => {
         setChildren((prev) =>
           prev.map((child) =>
