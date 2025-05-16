@@ -31,7 +31,12 @@ function Chat() {
 
     newSocket.on('receive_private_message', (data) => {
       console.log("📥 התקבלה הודעה חדשה מהשרת:", data);
-      setChatMessages((prev) => [...prev, data]);
+
+      if (data.roomId === roomId) {
+        setChatMessages((prev) => [...prev, data]);
+      } else {
+        console.log("⚠️ הודעה מחדר אחר – לא נטענת לצ'אט הזה");
+      }
     });
 
     newSocket.on('connect_error', (err) => {
@@ -41,7 +46,7 @@ function Chat() {
     return () => {
       newSocket.disconnect();
     };
-  }, []);
+  }, [roomId]); // חשוב: כולל roomId כדי שיהיה תמיד מעודכן
 
   // שליפת משתמשים
   useEffect(() => {
@@ -89,7 +94,6 @@ function Chat() {
           userId: user._id,
           otherUserId: chatUser._id
         });
-        console.log("🔁 הצטרפות אוטומטית לחדר:", [user._id, chatUser._id].sort().join('_'));
       });
     }
   }, [socket, user, recentChats]);
@@ -104,7 +108,6 @@ function Chat() {
         otherUserId: selectedUser._id
       });
       fetchMessages(newRoomId);
-      console.log("📡 הצטרפות לחדר:", newRoomId);
     }
   }, [selectedUser, socket, user]);
 
