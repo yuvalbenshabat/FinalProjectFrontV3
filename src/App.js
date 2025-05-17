@@ -15,7 +15,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Chat from "./components/Chat";
 import ReservedBooks from "./pages/ReservedBooks";
-import Navbar from "./components/Navbar"; // ✅ זה התפריט החדש
+import Navbar from "/components/Navbar"; // ✅ זה התפריט החדש
 
 function AppContent() {
   const location = useLocation();
