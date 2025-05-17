@@ -22,18 +22,47 @@ export default function Search() {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    console.log("Current user data:", user);
+    if (user?.location) {
+      console.log("User location:", user.location);
+    } else {
+      console.log("No location data in user object");
+    }
+  }, [user]);
+
   const fetchBooks = async () => {
     try {
       setLoading(true);
       const params = new URLSearchParams(filters);
 
+      // Debug log the user object
+      console.log("User object in fetchBooks:", user);
+
       if (user?.location?.lat && user?.location?.lng) {
-        params.append("lat", user.location.lat);
-        params.append("lng", user.location.lng);
+        // Convert coordinates to numbers if they're strings
+        const lat = parseFloat(user.location.lat);
+        const lng = parseFloat(user.location.lng);
+        
+        if (!isNaN(lat) && !isNaN(lng)) {
+          params.append("lat", lat.toString());
+          params.append("lng", lng.toString());
+          console.log("Sending coordinates:", { lat, lng });
+        }
+      } else {
+        console.log("Missing user location data");
       }
 
       const res = await fetch(`${API_BASE}/api/donatedBooks?${params.toString()}`);
       const data = await res.json();
+      
+      // Debug log the response
+      console.log("API Response:", data);
+      
+      // Check if distances are included
+      const hasDistances = data.some(book => typeof book.distanceKm === 'number');
+      console.log("Response includes distances:", hasDistances);
+
       setResults(data);
     } catch (error) {
       console.error("❌ שגיאה בשליפת ספרים:", error);
@@ -142,9 +171,14 @@ export default function Search() {
                   <p>📚 תחום: <strong>{book.subject || "לא ידוע"}</strong></p>
                   <p>📖 מצב: <strong>{book.condition}</strong></p>
                   {typeof book.distanceKm === 'number' && (
-                    <p>📍 מרחק: <strong style={{ color: book.distanceKm === 0 ? '#2e7d32' : '#000' }}>
-                      {book.distanceKm === 0 ? "בעיר שלך" : `${book.distanceKm} ק״מ`}
-                    </strong></p>
+                    <div className="distance-info">
+                      <p>
+                        <span className="info-label">📍 מרחק:</span>
+                        <strong className={book.distanceKm === 0 ? 'local-distance' : ''}>
+                          {book.distanceKm === 0 ? "בעיר שלך" : `${book.distanceKm.toFixed(1)} ק״מ`}
+                        </strong>
+                      </p>
+                    </div>
                   )}
                 </div>
 

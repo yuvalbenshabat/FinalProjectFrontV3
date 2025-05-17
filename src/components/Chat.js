@@ -1,9 +1,9 @@
-// components/Chat.js
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useUser } from '../context/UserContext';
 import axios from 'axios';
 import { useLocation } from 'react-router-dom';
+import '../styles/components.css';
 
 const API_BASE = process.env.REACT_APP_API_BASE;
 
@@ -21,7 +21,6 @@ function Chat() {
   const [roomId, setRoomId] = useState(null);
   const messagesEndRef = useRef(null);
 
-  // התחברות ל-socket
   useEffect(() => {
     const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
       transports: ['websocket'],
@@ -46,9 +45,8 @@ function Chat() {
     return () => {
       newSocket.disconnect();
     };
-  }, [roomId]); // חשוב: כולל roomId כדי שיהיה תמיד מעודכן
+  }, [roomId]);
 
-  // שליפת משתמשים
   useEffect(() => {
     const fetchUsers = async () => {
       try {
@@ -70,7 +68,6 @@ function Chat() {
     }
   }, [user, selectedUserIdFromSearch]);
 
-  // שליפת שיחות אחרונות
   useEffect(() => {
     const fetchRecentChats = async () => {
       try {
@@ -86,7 +83,6 @@ function Chat() {
     }
   }, [user]);
 
-  // הצטרפות אוטומטית לחדרים קודמים
   useEffect(() => {
     if (socket && user && recentChats.length > 0) {
       recentChats.forEach(chatUser => {
@@ -98,7 +94,6 @@ function Chat() {
     }
   }, [socket, user, recentChats]);
 
-  // טעינת הודעות והצטרפות לחדר חדש
   useEffect(() => {
     if (socket && selectedUser && user) {
       const newRoomId = [user._id, selectedUser._id].sort().join('_');
@@ -172,8 +167,8 @@ function Chat() {
         <select
           value={selectedUser?._id || ''}
           onChange={(e) => {
-            const user = users.find(u => u._id === e.target.value);
-            setSelectedUser(user);
+            const selectedUser = users.find(u => u._id === e.target.value);
+            setSelectedUser(selectedUser);
           }}
           style={{ padding: 8, width: '100%' }}
         >
@@ -248,10 +243,10 @@ function Chat() {
               onClick={sendMessage}
               style={{
                 padding: '8px 20px',
-                backgroundColor: '#4caf50',
+                backgroundColor: '#4CAF50',
                 color: 'white',
                 border: 'none',
-                borderRadius: 20,
+                borderRadius: 8,
                 cursor: 'pointer'
               }}
             >
