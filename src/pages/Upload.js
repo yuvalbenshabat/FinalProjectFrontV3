@@ -1,6 +1,8 @@
+// 📁 /pages/Upload.js
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
+import "../styles/Upload.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
 
@@ -50,9 +52,7 @@ export default function Upload() {
     if (alreadyScannedRef.current) return;
     alreadyScannedRef.current = true;
 
-    console.log("📦 barcode raw:", rawBarcode);
     const cleaned = cleanScannedBarcode(rawBarcode);
-    console.log("✅ cleaned barcode:", cleaned);
     setBook((prev) => ({ ...prev, barcode: cleaned }));
     await validateAndFillBook(cleaned);
   }, []);
@@ -93,7 +93,6 @@ export default function Upload() {
 
   useEffect(() => {
     startScanner();
-
     return () => {
       if (scannerRef.current) {
         scannerRef.current.clear().catch(() => {});
@@ -163,11 +162,12 @@ export default function Upload() {
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>העלאת ספר לתרומה</h2>
-        <div id="qr-reader" style={styles.scanner}></div>
-        <form onSubmit={handleSubmit} style={styles.form}>
+    <div className="upload-page">
+      <div className="upload-card">
+        <h2 className="title">העלאת ספר לתרומה</h2>
+        <div id="qr-reader" className="scanner"></div>
+
+        <form onSubmit={handleSubmit} className="upload-form">
           <label>שם הספר:
             <input type="text" name="title" value={book.title} onChange={handleChange} />
           </label>
@@ -189,56 +189,12 @@ export default function Upload() {
             </select>
           </label>
 
-          {isApproved === true && <p style={{ color: "green" }}>✅ הספר מאושר!</p>}
-          {isApproved === false && <p style={{ color: "red" }}>❌ הספר לא נמצא ברשימת האישור</p>}
+          {isApproved === true && <p className="status approved">✅ הספר מאושר!</p>}
+          {isApproved === false && <p className="status rejected">❌ הספר לא נמצא ברשימת האישור</p>}
 
-          <button type="submit" style={styles.button}>📤 שלח</button>
+          <button type="submit" className="button-primary">📤 שלח</button>
         </form>
       </div>
     </div>
   );
 }
-
-const styles = {
-  page: {
-    background: "#e6ecff",
-    minHeight: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "30px",
-  },
-  card: {
-    backgroundColor: "white",
-    padding: "40px",
-    borderRadius: "10px",
-    boxShadow: "0 0 10px rgba(0,0,0,0.1)",
-    width: "100%",
-    maxWidth: "400px",
-    direction: "rtl",
-    textAlign: "center"
-  },
-  title: {
-    marginBottom: "20px",
-    color: "#333"
-  },
-  scanner: {
-    width: "100%",
-    margin: "20px 0"
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px"
-  },
-  button: {
-    backgroundColor: "#f6c90e",
-    color: "#000",
-    fontWeight: "bold",
-    border: "none",
-    padding: "10px 20px",
-    borderRadius: "5px",
-    cursor: "pointer",
-    marginTop: "10px"
-  }
-};

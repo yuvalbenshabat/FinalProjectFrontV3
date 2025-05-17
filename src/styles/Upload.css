@@ -1,0 +1,73 @@
+.upload-page {
+  background: #e6ecff;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 30px;
+}
+
+.upload-card {
+  background-color: white;
+  padding: 40px;
+  border-radius: 10px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
+  direction: rtl;
+  text-align: center;
+}
+
+.upload-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+input, select {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 1rem;
+}
+
+.scanner {
+  width: 100%;
+  margin: 20px 0;
+}
+
+.title {
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.button-primary {
+  background-color: #f6c90e;
+  color: #000;
+  font-weight: bold;
+  border: none;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+
+.status.approved {
+  color: green;
+  font-weight: bold;
+}
+
+.status.rejected {
+  color: red;
+  font-weight: bold;
+}
+
+@media (max-width: 600px) {
+  .upload-card {
+    padding: 20px;
+  }
+
+  .button-primary {
+    width: 100%;
+  }
+}
