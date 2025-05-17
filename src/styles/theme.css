@@ -1,0 +1,96 @@
+:root {
+  --color-primary: #8FD6D5;
+  --color-accent: #FBD3C3;
+  --color-bg: #D6D2C4;
+  --color-text: #2F2F2F;
+  --color-white: #ffffff;
+  --color-yellow: #f6c90e;
+  --radius: 12px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* עיצוב כללי */
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background-color: var(--color-bg);
+  color: var(--color-text);
+}
+
+/* כרטיס */
+.card {
+  background: var(--color-white);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  margin: 20px auto;
+  max-width: 480px;
+  text-align: center;
+  direction: rtl;
+}
+
+/* טפסים */
+input, select, textarea {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0 12px;
+  border: 1px solid #ccc;
+  border-radius: var(--radius);
+  font-size: 1rem;
+  box-sizing: border-box;
+}
+
+/* כפתור ראשי */
+.button-primary {
+  background-color: var(--color-yellow);
+  color: var(--color-text);
+  font-weight: bold;
+  padding: 12px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.button-primary:hover {
+  background-color: #e6b80c;
+}
+
+/* כפתור משני */
+.button-secondary {
+  background-color: var(--color-accent);
+  color: var(--color-text);
+  border: none;
+  padding: 10px;
+  border-radius: var(--radius);
+  cursor: pointer;
+}
+
+.title {
+  font-size: 1.6rem;
+  margin-bottom: 20px;
+  color: var(--color-text);
+}
+
+.status {
+  font-weight: bold;
+}
+
+.status.approved {
+  color: green;
+}
+
+.status.rejected {
+  color: red;
+}
+
+@media (max-width: 600px) {
+  .card {
+    padding: 16px;
+    margin: 12px;
+  }
+
+  .button-primary {
+    width: 100%;
+  }
+}

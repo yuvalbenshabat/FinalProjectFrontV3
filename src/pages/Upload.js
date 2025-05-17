@@ -1,8 +1,7 @@
-// 📁 /pages/Upload.js
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
-import "../styles/Upload.css";
+import "../styles/theme.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
 
@@ -162,39 +161,52 @@ export default function Upload() {
   };
 
   return (
-    <div className="upload-page">
-      <div className="upload-card">
-        <h2 className="title">העלאת ספר לתרומה</h2>
-        <div id="qr-reader" className="scanner"></div>
+    <div className="card">
+      <h2 className="title">העלאת ספר לתרומה</h2>
 
-        <form onSubmit={handleSubmit} className="upload-form">
-          <label>שם הספר:
-            <input type="text" name="title" value={book.title} onChange={handleChange} />
-          </label>
-          <label>מחבר:
-            <input type="text" name="author" value={book.author} onChange={handleChange} />
-          </label>
-          <label>כיתה:
-            <input type="text" name="grade" value={book.grade} onChange={handleChange} />
-          </label>
-          <label>ברקוד:
-            <input type="text" name="barcode" value={book.barcode} onChange={handleChange} />
-          </label>
-          <label>מצב הספר:
-            <select name="condition" value={book.condition} onChange={handleChange}>
-              <option value="">בחר מצב</option>
-              <option value="לא טוב">לא טוב</option>
-              <option value="סביר">סביר</option>
-              <option value="טוב">טוב</option>
-            </select>
-          </label>
+      <div id="qr-reader" className="scanner"></div>
 
-          {isApproved === true && <p className="status approved">✅ הספר מאושר!</p>}
-          {isApproved === false && <p className="status rejected">❌ הספר לא נמצא ברשימת האישור</p>}
+      <form onSubmit={handleSubmit}>
+        <input
+          type="text"
+          name="title"
+          placeholder="שם הספר"
+          value={book.title}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="author"
+          placeholder="מחבר"
+          value={book.author}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="grade"
+          placeholder="כיתה"
+          value={book.grade}
+          onChange={handleChange}
+        />
+        <input
+          type="text"
+          name="barcode"
+          placeholder="ברקוד"
+          value={book.barcode}
+          onChange={handleChange}
+        />
+        <select name="condition" value={book.condition} onChange={handleChange}>
+          <option value="">בחר מצב</option>
+          <option value="לא טוב">לא טוב</option>
+          <option value="סביר">סביר</option>
+          <option value="טוב">טוב</option>
+        </select>
 
-          <button type="submit" className="button-primary">📤 שלח</button>
-        </form>
-      </div>
+        {isApproved === true && <p className="status approved">✅ הספר מאושר!</p>}
+        {isApproved === false && <p className="status rejected">❌ הספר לא נמצא ברשימת האישור</p>}
+
+        <button type="submit" className="button-primary">📤 שלח</button>
+      </form>
     </div>
   );
 }
