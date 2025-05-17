@@ -162,7 +162,7 @@ export default function Upload() {
 
   return (
     <div className="card">
-      <h2 className="title">את ספר לתרומה</h2>
+      <h2 className="title">העלאת ספר לתרומה</h2>
 
       <div id="qr-reader" className="scanner"></div>
 
