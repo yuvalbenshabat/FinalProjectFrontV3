@@ -1,4 +1,3 @@
-/* 🎨 צבעים מהלוגו */
 :root {
   --color-primary: #8FD6D5;
   --color-accent: #FBD3C3;
@@ -41,7 +40,6 @@
   border-radius: 50%;
 }
 
-/* ☰ כפתור תפריט */
 .hamburger {
   display: none;
   background: none;
@@ -51,7 +49,6 @@
   cursor: pointer;
 }
 
-/* קישורים */
 .navbar-links {
   display: flex;
   gap: 12px;
@@ -85,7 +82,6 @@
   background-color: #d32f2f;
 }
 
-/* 📱 התאמה לנייד */
 @media (max-width: 768px) {
   .hamburger {
     display: block;
@@ -102,7 +98,7 @@
   }
 
   .navbar-links.open {
-    max-height: 400px; /* גובה שיתאים לתוכן */
+    max-height: 400px;
   }
 
   .navbar-links a,
