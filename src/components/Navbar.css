@@ -1,0 +1,114 @@
+/* 🎨 צבעים מהלוגו */
+:root {
+  --color-primary: #8FD6D5;
+  --color-accent: #FBD3C3;
+  --color-bg: #D6D2C4;
+  --color-text: #2F2F2F;
+  --color-white: #ffffff;
+  --radius: 12px;
+  --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.navbar {
+  background-color: var(--color-bg);
+  box-shadow: var(--shadow);
+  padding: 10px 16px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  direction: rtl;
+}
+
+.navbar-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.navbar-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+}
+
+.navbar-logo img {
+  height: 32px;
+  width: 32px;
+  border-radius: 50%;
+}
+
+/* ☰ כפתור תפריט */
+.hamburger {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+/* קישורים */
+.navbar-links {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  transition: max-height 0.3s ease-in-out;
+}
+
+.navbar-links a,
+.logout {
+  text-decoration: none;
+  color: var(--color-text);
+  font-size: 0.95rem;
+  background-color: var(--color-white);
+  border-radius: var(--radius);
+  padding: 6px 12px;
+  transition: background-color 0.2s;
+}
+
+.navbar-links a:hover {
+  background-color: var(--color-accent);
+}
+
+.logout {
+  background-color: #f44336;
+  color: white;
+  border: none;
+  cursor: pointer;
+}
+
+.logout:hover {
+  background-color: #d32f2f;
+}
+
+/* 📱 התאמה לנייד */
+@media (max-width: 768px) {
+  .hamburger {
+    display: block;
+  }
+
+  .navbar-links {
+    flex-direction: column;
+    align-items: flex-start;
+    width: 100%;
+    overflow: hidden;
+    max-height: 0;
+    margin-top: 10px;
+    padding-right: 4px;
+  }
+
+  .navbar-links.open {
+    max-height: 400px; /* גובה שיתאים לתוכן */
+  }
+
+  .navbar-links a,
+  .logout {
+    width: 100%;
+    text-align: right;
+    margin-bottom: 6px;
+  }
+}
