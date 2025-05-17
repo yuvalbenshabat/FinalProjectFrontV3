@@ -187,4 +187,20 @@ body {
   .book-selector button {
     width: 100%;
   }
+
+.child-selector {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.child-selector select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  font-size: 1rem;
+  width: 240px;
+}
+
+
 }

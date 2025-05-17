@@ -1,4 +1,3 @@
-// 📁 /pages/Wishlist.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
@@ -18,6 +17,9 @@ export default function Wishlist() {
   const [booksLoading, setBooksLoading] = useState(true);
   const [selectedBooks, setSelectedBooks] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
+  const [activeChildId, setActiveChildId] = useState(null);
+
+  const activeChild = children.find((c) => c._id === activeChildId);
 
   useEffect(() => {
     axios
@@ -45,6 +47,9 @@ export default function Wishlist() {
           })
         );
         setChildren(childrenWithWishlists);
+        if (childrenWithWishlists.length > 0) {
+          setActiveChildId(childrenWithWishlists[0]._id);
+        }
       })
       .catch((err) => console.error("שגיאה בטעינת ילדים:", err));
   }, [user]);
@@ -59,9 +64,11 @@ export default function Wishlist() {
         userId: user._id,
       })
       .then((res) => {
-        setChildren([...children, { ...res.data, wishlist: [] }]);
+        const newChild = { ...res.data, wishlist: [] };
+        setChildren([...children, newChild]);
         setNewChildName("");
         setNewChildGrade("");
+        setActiveChildId(newChild._id);
       })
       .catch((err) => console.error("שגיאה בהוספת ילד:", err));
   };
@@ -147,87 +154,100 @@ export default function Wishlist() {
         <button onClick={handleAddChild}>הוסף ילד</button>
       </div>
 
-      <div className="children-grid">
-        {children.map((child) => (
-          <div key={child._id} className="child-card">
-            <h3 className="child-name">
-              {child.name} <span className="grade">({child.grade})</span>
-            </h3>
+      {children.length > 0 && (
+        <div className="child-selector">
+          <select
+            value={activeChildId || ""}
+            onChange={(e) => setActiveChildId(e.target.value)}
+          >
+            {children.map((child) => (
+              <option key={child._id} value={child._id}>
+                {child.name} (כיתה {child.grade})
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
-            <div className="books-grid">
-              {child.wishlist.map((book) => (
-                <div key={book._id} className="book-card">
-                  <div className="book-info">
-                    <p className="book-title">{book.title}</p>
-                    <p className="book-author">{book.author}</p>
-                  </div>
-                  <div className="book-actions">
-                    <button
-                      className="donors-button"
-                      onClick={() => handleShowDonors(child._id, book._id)}
-                    >
-                      הצג תורמים
-                    </button>
-                    <button
-                      className="remove-button"
-                      onClick={() => handleRemoveBook(child._id, book._id)}
-                    >
-                      הסר
-                    </button>
-                  </div>
+      {activeChild && (
+        <div className="child-card">
+          <h3 className="child-name">
+            {activeChild.name} <span className="grade">({activeChild.grade})</span>
+          </h3>
+
+          <div className="books-grid">
+            {activeChild.wishlist.map((book) => (
+              <div key={book._id} className="book-card">
+                <div className="book-info">
+                  <p className="book-title">{book.title}</p>
+                  <p className="book-author">{book.author}</p>
                 </div>
-              ))}
-            </div>
+                <div className="book-actions">
+                  <button
+                    className="donors-button"
+                    onClick={() => handleShowDonors(activeChild._id, book._id)}
+                  >
+                    הצג תורמים
+                  </button>
+                  <button
+                    className="remove-button"
+                    onClick={() => handleRemoveBook(activeChild._id, book._id)}
+                  >
+                    הסר
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
 
-            <input
-              type="text"
-              placeholder="חפש לפי שם..."
-              value={searchTerms[child._id] || ""}
+          <input
+            type="text"
+            placeholder="חפש לפי שם..."
+            value={searchTerms[activeChild._id] || ""}
+            onChange={(e) =>
+              setSearchTerms({
+                ...searchTerms,
+                [activeChild._id]: e.target.value,
+              })
+            }
+          />
+
+          <div className="book-selector">
+            <select
+              value={selectedBooks[activeChild._id] || ""}
               onChange={(e) =>
-                setSearchTerms({
-                  ...searchTerms,
-                  [child._id]: e.target.value,
+                setSelectedBooks({
+                  ...selectedBooks,
+                  [activeChild._id]: e.target.value,
                 })
               }
-            />
-
-            <div className="book-selector">
-              <select
-                value={selectedBooks[child._id] || ""}
-                onChange={(e) =>
-                  setSelectedBooks({
-                    ...selectedBooks,
-                    [child._id]: e.target.value,
-                  })
-                }
-              >
-                {booksLoading ? (
-                  <option>טוען ספרים...</option>
-                ) : (
-                  <>
-                    <option value="">בחר ספר להוספה</option>
-                    {bookOptions
-                      .filter(
-                        (book) =>
-                          book.grade === child.grade &&
-                          (!searchTerms[child._id] ||
-                            book.title
-                              .toLowerCase()
-                              .includes(searchTerms[child._id].toLowerCase()))
-                      )
-                      .map((book) => (
-                        <option key={book._id} value={book.title}>
-                          {book.title} - {book.author}
-                        </option>
-                      ))}
-                  </>
-                )}
-              </select>
-              <button onClick={() => handleAddBook(child._id)}>הוסף</button>
-            </div>
+            >
+              {booksLoading ? (
+                <option>טוען ספרים...</option>
+              ) : (
+                <>
+                  <option value="">בחר ספר להוספה</option>
+                  {bookOptions
+                    .filter(
+                      (book) =>
+                        book.grade === activeChild.grade &&
+                        (!searchTerms[activeChild._id] ||
+                          book.title
+                            .toLowerCase()
+                            .includes(searchTerms[activeChild._id].toLowerCase()))
+                    )
+                    .map((book) => (
+                      <option key={book._id} value={book.title}>
+                        {book.title} - {book.author}
+                      </option>
+                    ))}
+                </>
+              )}
+            </select>
+            <button onClick={() => handleAddBook(activeChild._id)}>הוסף</button>
           </div>
-        ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 }
