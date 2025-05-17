@@ -1,4 +1,4 @@
-// 📁 נתיב: /pages/Wishlist.js
+// 📁 /pages/Wishlist.js
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useUser } from "../context/UserContext";
@@ -124,7 +124,7 @@ export default function Wishlist() {
 
   return (
     <div className="wishlist-container">
-      <h2 className="wishlist-title">📚 רשימת ספרים חסרים</h2>
+      <h2 className="wishlist-title">רשימת ספרים חסרים</h2>
 
       <div className="add-child-form">
         <input
@@ -138,15 +138,13 @@ export default function Wishlist() {
           onChange={(e) => setNewChildGrade(e.target.value)}
         >
           <option value="">בחר כיתה</option>
-          {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "יא", "יב"].map(
-            (grade) => (
-              <option key={grade} value={grade}>
-                כיתה {grade}
-              </option>
-            )
-          )}
+          {["א", "ב", "ג", "ד", "ה", "ו", "ז", "ח", "ט", "י", "יא", "יב"].map((grade) => (
+            <option key={grade} value={grade}>
+              כיתה {grade}
+            </option>
+          ))}
         </select>
-        <button onClick={handleAddChild}>➕ הוסף ילד</button>
+        <button onClick={handleAddChild}>הוסף ילד</button>
       </div>
 
       <div className="children-grid">
@@ -157,30 +155,28 @@ export default function Wishlist() {
             </h3>
 
             <div className="books-grid">
-              {child.wishlist.map((book) => {
-                return (
-                  <div key={book._id} className="book-card">
-                    <div className="book-info">
-                      <p className="book-title">{book.title}</p>
-                      <p className="book-author">✍️ {book.author}</p>
-                    </div>
-                    <div className="book-actions">
-                      <button
-                        className="donors-button"
-                        onClick={() => handleShowDonors(child._id, book._id)}
-                      >
-                        הצג תורמים
-                      </button>
-                      <button
-                        className="remove-button"
-                        onClick={() => handleRemoveBook(child._id, book._id)}
-                      >
-                        📦 הסר
-                      </button>
-                    </div>
+              {child.wishlist.map((book) => (
+                <div key={book._id} className="book-card">
+                  <div className="book-info">
+                    <p className="book-title">{book.title}</p>
+                    <p className="book-author">{book.author}</p>
                   </div>
-                );
-              })}
+                  <div className="book-actions">
+                    <button
+                      className="donors-button"
+                      onClick={() => handleShowDonors(child._id, book._id)}
+                    >
+                      הצג תורמים
+                    </button>
+                    <button
+                      className="remove-button"
+                      onClick={() => handleRemoveBook(child._id, book._id)}
+                    >
+                      הסר
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
 
             <input
@@ -227,7 +223,7 @@ export default function Wishlist() {
                   </>
                 )}
               </select>
-              <button onClick={() => handleAddBook(child._id)}>➕ הוסף</button>
+              <button onClick={() => handleAddBook(child._id)}>הוסף</button>
             </div>
           </div>
         ))}

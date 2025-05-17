@@ -1,41 +1,72 @@
-.wishlist-container {
-  padding: 20px;
-  max-width: 900px;
-  margin: auto;
+:root {
+  --color-primary: #2d3e50;         /* כחול כהה מודרני */
+  --color-bg: #f7f9fc;              /* רקע כללי רך */
+  --color-card: #ffffff;           /* רקע כרטיס */
+  --color-border: #e0e6ed;         /* גבול עדין */
+  --color-text: #1f2d3d;           /* טקסט כהה נעים */
+  --color-subtext: #6b7c93;
+  --color-danger: #e74c3c;
+  --color-action: #34495e;         /* כפתור כהה */
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  background-color: var(--color-bg);
+  font-family: 'Segoe UI', sans-serif;
+  color: var(--color-text);
+  margin: 0;
+  padding: 0;
   direction: rtl;
+}
+
+.wishlist-container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 32px 24px;
 }
 
 .wishlist-title {
   font-size: 1.6rem;
-  font-weight: bold;
+  font-weight: 600;
   color: var(--color-primary);
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   text-align: center;
 }
 
 .add-child-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 24px;
+  gap: 12px;
+  margin-bottom: 32px;
+  justify-content: center;
 }
 
 .add-child-form input,
 .add-child-form select {
-  flex: 1 1 160px;
-  padding: 10px;
+  width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  border: 1px solid #ccc;
-  font-size: 1rem;
+  font-size: 0.95rem;
+  background-color: white;
+  color: var(--color-text);
 }
 
 .add-child-form button {
-  background-color: var(--color-yellow);
+  background-color: var(--color-action);
+  color: white;
   border: none;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
   border-radius: var(--radius);
-  padding: 10px 16px;
-  font-weight: bold;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-child-form button:hover {
+  background-color: #22313f;
 }
 
 .children-grid {
@@ -45,7 +76,8 @@
 }
 
 .child-card {
-  background: var(--color-white);
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
   padding: 20px;
@@ -53,117 +85,105 @@
 
 .child-name {
   font-size: 1.2rem;
-  color: var(--color-text);
-  margin-bottom: 10px;
-}
-
-.grade {
-  color: var(--color-accent);
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--color-primary);
 }
 
 .books-grid {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin-bottom: 10px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
 }
 
 .book-card {
-  background: var(--color-bg);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  padding: 10px;
-  width: 100%;
-  max-width: 300px;
-  box-shadow: var(--shadow);
+  padding: 16px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
 }
 
-.book-info {
-  margin-bottom: 8px;
-}
-
 .book-title {
   font-weight: bold;
   font-size: 1rem;
+  margin-bottom: 4px;
 }
 
 .book-author {
   font-size: 0.9rem;
-  color: #555;
+  color: var(--color-subtext);
 }
 
 .book-actions {
   display: flex;
-  gap: 6px;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 12px;
 }
 
 .donors-button,
 .remove-button {
-  padding: 6px 8px;
   font-size: 0.85rem;
-  border: none;
+  padding: 8px 12px;
   border-radius: var(--radius);
+  font-weight: 500;
+  border: none;
   cursor: pointer;
 }
 
 .donors-button {
-  background-color: var(--color-primary);
+  background-color: var(--color-action);
   color: white;
 }
 
 .remove-button {
-  background-color: #f44336;
+  background-color: var(--color-danger);
   color: white;
-}
-
-input[type="text"] {
-  margin: 10px 0;
-  padding: 10px;
-  border: 1px solid #ccc;
-  border-radius: var(--radius);
-  width: 100%;
 }
 
 .book-selector {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
-  align-items: center;
   margin-top: 10px;
 }
 
 .book-selector select {
   flex: 1;
   padding: 10px;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius);
-  border: 1px solid #ccc;
+  background-color: white;
 }
 
 .book-selector button {
   padding: 10px 16px;
-  background-color: var(--color-accent);
+  background-color: var(--color-action);
+  color: white;
   border: none;
   border-radius: var(--radius);
-  font-weight: bold;
+  font-weight: 500;
   cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.book-selector button:hover {
+  background-color: #1d2c3b;
 }
 
 @media (max-width: 600px) {
-  .book-card {
-    max-width: 100%;
-  }
-
   .add-child-form {
     flex-direction: column;
+    align-items: stretch;
   }
 
-  .book-selector {
-    flex-direction: column;
-  }
-
+  .add-child-form input,
+  .add-child-form select,
+  .add-child-form button,
+  .book-selector select,
   .book-selector button {
     width: 100%;
   }
