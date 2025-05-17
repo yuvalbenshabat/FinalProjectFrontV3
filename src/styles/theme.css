@@ -10,11 +10,18 @@
 }
 
 /* עיצוב כללי */
-body {
+html, body {
   margin: 0;
+  padding: 0;
   font-family: 'Segoe UI', sans-serif;
   background-color: var(--color-bg);
   color: var(--color-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 /* כרטיס */
@@ -25,6 +32,7 @@ body {
   padding: 24px;
   margin: 20px auto;
   max-width: 480px;
+  width: 100%;
   text-align: center;
   direction: rtl;
 }
@@ -37,7 +45,6 @@ input, select, textarea {
   border: 1px solid #ccc;
   border-radius: var(--radius);
   font-size: 1rem;
-  box-sizing: border-box;
 }
 
 /* כפתור ראשי */
@@ -84,13 +91,34 @@ input, select, textarea {
   color: red;
 }
 
+/* ✅ סריקה */
+.scanner {
+  margin: 20px 0;
+}
+
+/* ✅ רספונסיביות לנייד */
 @media (max-width: 600px) {
+  body {
+    padding: 10px;
+  }
+
   .card {
     padding: 16px;
     margin: 12px;
+    border-radius: 8px;
   }
 
-  .button-primary {
+  .title {
+    font-size: 1.3rem;
+  }
+
+  .button-primary,
+  .button-secondary {
     width: 100%;
+    font-size: 1rem;
+  }
+
+  input, select {
+    font-size: 1rem;
   }
 }
