@@ -1,88 +1,92 @@
 // 📁 נתיב: /pages/Search.js
+// Search Component - Main page for searching and displaying donated books
+// This component allows users to search for books, view their details, and interact with donors
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 import { useLocation, useNavigate } from "react-router-dom";
+import "../styles/theme.css";
 
+// Base URL for API calls - loaded from environment variables
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function Search() {
+  // Get current user data from UserContext
   const { user } = useUser();
+  // Get current route location and navigation function
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Extract any pre-filled search parameters from navigation state
   const { title = "", grade = "" } = location.state || {};
 
+  // State for search filters
   const [filters, setFilters] = useState({
-    bookTitle: title,
+    bookTitle: title,  // Initialize with title from navigation if available
     author: "",
-    grade: grade,
+    grade: grade,      // Initialize with grade from navigation if available
     condition: ""
   });
 
+  // State for search results and loading status
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
+  // useEffect to log user data and location for debugging
   useEffect(() => {
-    console.log("Current user data:", user);
-    if (user?.location) {
-      console.log("User location:", user.location);
-    } else {
-      console.log("No location data in user object");
+    if (!user?.location) {
+      setError("לא נמצאו נתוני מיקום. חלק מהתכונות עלולות להיות מוגבלות.");
     }
   }, [user]);
 
+  // Main function to fetch books from the API based on current filters
   const fetchBooks = async () => {
     try {
       setLoading(true);
+      setError("");
+      // Convert filters object to URL parameters
       const params = new URLSearchParams(filters);
 
-      // Debug log the user object
-      console.log("User object in fetchBooks:", user);
-
+      // Add user's location to search parameters if available
       if (user?.location?.lat && user?.location?.lng) {
-        // Convert coordinates to numbers if they're strings
         const lat = parseFloat(user.location.lat);
         const lng = parseFloat(user.location.lng);
         
         if (!isNaN(lat) && !isNaN(lng)) {
           params.append("lat", lat.toString());
           params.append("lng", lng.toString());
-          console.log("Sending coordinates:", { lat, lng });
         }
-      } else {
-        console.log("Missing user location data");
       }
 
+      // Make API call to fetch books with current filters
       const res = await fetch(`${API_BASE}/api/donatedBooks?${params.toString()}`);
+      if (!res.ok) throw new Error("שגיאה בשליפת נתונים מהשרת");
+      
       const data = await res.json();
-      
-      // Debug log the response
-      console.log("API Response:", data);
-      
-      // Check if distances are included
-      const hasDistances = data.some(book => typeof book.distanceKm === 'number');
-      console.log("Response includes distances:", hasDistances);
-
       setResults(data);
     } catch (error) {
-      console.error("❌ שגיאה בשליפת ספרים:", error);
+      console.error("שגיאה בשליפת ספרים:", error);
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
 
+  // Fetch books whenever filters change
   useEffect(() => {
     fetchBooks();
   }, [filters]);
 
+  // Handle changes in filter input fields
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle book reservation
   const handleReserve = async (bookId) => {
     if (!user) {
-      alert("🔒 עליך להתחבר כדי לשריין ספר.");
+      setError("עליך להתחבר כדי לשריין ספר");
       return;
     }
 
@@ -96,205 +100,331 @@ export default function Search() {
         body: JSON.stringify({ reservedBy: user._id })
       });
 
-      if (response.ok) {
-        alert("✅ הספר שוריין בהצלחה!");
-        fetchBooks();
-      } else {
-        alert("❌ שגיאה בשריון הספר.");
-      }
+      if (!response.ok) throw new Error("שגיאה בשריון הספר");
+      
+      fetchBooks();  // Refresh the book list
     } catch (error) {
-      console.error("❌ שגיאה בעת שריון ספר:", error);
-      alert("❌ שגיאה בשרת.");
+      console.error("שגיאה בעת שריון ספר:", error);
+      setError(error.message);
     }
   };
 
+  // Navigate to chat page with selected donor
   const handleChat = (donorId) => {
     navigate("/chat", { state: { selectedUserId: donorId } });
   };
 
   return (
-    <div style={styles.page}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>🔍 חיפוש ספרים לתרומה</h2>
+    <div className="md-container">
+      <div className="search-page">
+        <div className="md-card search-container">
+          {/* Header */}
+          <div className="search-header">
+            <span className="material-icons">search</span>
+            <h1 className="md-text-xl">חיפוש ספרים לתרומה</h1>
+          </div>
 
-        <div style={styles.filters}>
-          <input
-            type="text"
-            name="author"
-            placeholder="מחבר"
-            value={filters.author}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="text"
-            name="bookTitle"
-            placeholder="שם הספר"
-            value={filters.bookTitle}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <input
-            type="text"
-            name="grade"
-            placeholder="כיתה"
-            value={filters.grade}
-            onChange={handleChange}
-            style={styles.input}
-          />
-          <select
-            name="condition"
-            value={filters.condition}
-            onChange={handleChange}
-            style={styles.input}
-          >
-            <option value="">מצב הספר</option>
-            <option value="טוב">טוב</option>
-            <option value="סביר">סביר</option>
-            <option value="לא טוב">לא טוב</option>
-          </select>
-        </div>
-
-        {loading ? (
-          <p style={{ marginTop: "30px", fontSize: "18px" }}>⏳ טוען ספרים...</p>
-        ) : results.length > 0 ? (
-          results.map((book) => (
-            <div key={book._id} style={styles.bookCard}>
-              <div style={styles.bookTitleHeader}>
-                <span role="img" aria-label="book">📗</span> {book.bookTitle}
-              </div>
-
-              <div style={styles.detailsGrid}>
-                <div style={styles.detailBlock}>
-                  <p>📘 מחבר: <strong>{book.author}</strong></p>
-                  <p>🏫 כיתה: <strong>{book.grade}</strong></p>
-                  <p>📚 תחום: <strong>{book.subject || "לא ידוע"}</strong></p>
-                  <p>📖 מצב: <strong>{book.condition}</strong></p>
-                  {typeof book.distanceKm === 'number' && (
-                    <div className="distance-info">
-                      <p>
-                        <span className="info-label">📍 מרחק:</span>
-                        <strong className={book.distanceKm === 0 ? 'local-distance' : ''}>
-                          {book.distanceKm === 0 ? "בעיר שלך" : `${book.distanceKm.toFixed(1)} ק״מ`}
-                        </strong>
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                <div style={styles.detailBlock}>
-                  <p>🧑‍💼 שם התורם: <strong>{book.username || "לא ידוע"}</strong></p>
-                  <p>📞 טלפון: <strong>{book.phone || "לא ידוע"}</strong></p>
-                  <p>🏙️ עיר: <strong>{book.city || "לא ידוע"}</strong></p>
-                </div>
-              </div>
-
-              <div style={{ display: 'flex', gap: '10px', marginTop: '10px' }}>
-                <button
-                  style={styles.reserveButton}
-                  onClick={() => handleReserve(book._id)}
-                >
-                  🎯 שריין ספר
-                </button>
-                <button
-                  style={{ ...styles.reserveButton, backgroundImage: "linear-gradient(to right, #2196f3, #1e88e5)" }}
-                  onClick={() => handleChat(book.userId)}
-                >
-                  💬 צ׳אט עם התורם
-                </button>
-              </div>
+          {/* Error Message */}
+          {error && (
+            <div className="md-status md-status-error">
+              <span className="material-icons">error</span>
+              {error}
             </div>
-          ))
-        ) : (
-          <p style={{ marginTop: "30px", fontSize: "18px" }}>😥 לא נמצאו ספרים תואמים.</p>
-        )}
+          )}
+
+          {/* Search Filters */}
+          <div className="search-filters md-grid">
+            <div className="md-input-group">
+              <span className="material-icons md-input-icon">person</span>
+              <input
+                type="text"
+                name="author"
+                className="md-input"
+                placeholder="מחבר"
+                value={filters.author}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="md-input-group">
+              <span className="material-icons md-input-icon">book</span>
+              <input
+                type="text"
+                name="bookTitle"
+                className="md-input"
+                placeholder="שם הספר"
+                value={filters.bookTitle}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="md-input-group">
+              <span className="material-icons md-input-icon">school</span>
+              <input
+                type="text"
+                name="grade"
+                className="md-input"
+                placeholder="כיתה"
+                value={filters.grade}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="md-input-group">
+              <span className="material-icons md-input-icon">star_rate</span>
+              <select
+                name="condition"
+                className="md-input"
+                value={filters.condition}
+                onChange={handleChange}
+              >
+                <option value="">מצב הספר</option>
+                <option value="טוב">טוב</option>
+                <option value="סביר">סביר</option>
+                <option value="לא טוב">לא טוב</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Results Section */}
+          <div className="search-results">
+            {loading ? (
+              <div className="md-loading">
+                <div className="md-loading-spinner" />
+                <span>טוען ספרים...</span>
+              </div>
+            ) : results.length > 0 ? (
+              <div className="md-grid books-grid">
+                {results.map((book) => (
+                  <div key={book._id} className="md-card book-card">
+                    {/* Book Header */}
+                    <div className="book-header">
+                      <span className="material-icons book-icon">menu_book</span>
+                      <h3 className="md-text-lg">{book.bookTitle}</h3>
+                    </div>
+
+                    {/* Book Details */}
+                    <div className="book-content">
+                      <div className="book-info">
+                        <div className="info-row">
+                          <span className="material-icons">person</span>
+                          <span>מחבר: <strong>{book.author}</strong></span>
+                        </div>
+                        
+                        <div className="info-row">
+                          <span className="material-icons">school</span>
+                          <span>כיתה: <strong>{book.grade}</strong></span>
+                        </div>
+
+                        <div className="info-row">
+                          <span className="material-icons">category</span>
+                          <span>תחום: <strong>{book.subject || "לא ידוע"}</strong></span>
+                        </div>
+
+                        <div className="info-row">
+                          <span className="material-icons">star_rate</span>
+                          <span>מצב: <strong>{book.condition}</strong></span>
+                        </div>
+
+                        {typeof book.distanceKm === 'number' && (
+                          <div className="info-row">
+                            <span className="material-icons">location_on</span>
+                            <span>מרחק: <strong>
+                              {book.distanceKm === 0 ? "בעיר שלך" : `${book.distanceKm.toFixed(1)} ק״מ`}
+                            </strong></span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Donor Details */}
+                      <div className="donor-info">
+                        <h4 className="md-text-sm">פרטי התורם</h4>
+                        <div className="info-row">
+                          <span className="material-icons">person_outline</span>
+                          <span>שם: <strong>{book.username || "לא ידוע"}</strong></span>
+                        </div>
+                        
+                        <div className="info-row">
+                          <span className="material-icons">phone</span>
+                          <span>טלפון: <strong>{book.phone || "לא ידוע"}</strong></span>
+                        </div>
+
+                        <div className="info-row">
+                          <span className="material-icons">location_city</span>
+                          <span>עיר: <strong>{book.city || "לא ידוע"}</strong></span>
+                        </div>
+                      </div>
+
+                      {/* Action Buttons */}
+                      <div className="book-actions">
+                        <button
+                          className="md-button md-button-primary"
+                          onClick={() => handleReserve(book._id)}
+                        >
+                          <span className="material-icons">bookmark</span>
+                          שריין ספר
+                        </button>
+                        <button
+                          className="md-button md-button-secondary"
+                          onClick={() => handleChat(book.userId)}
+                        >
+                          <span className="material-icons">chat</span>
+                          צ׳אט עם התורם
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="no-results">
+                <span className="material-icons">search_off</span>
+                <p>לא נמצאו ספרים תואמים</p>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
+
+      <style>{`
+        .search-page {
+          padding: var(--md-spacing-xl) 0;
+          min-height: calc(100vh - 64px);
+        }
+
+        .search-container {
+          padding: var(--md-spacing-xl);
+        }
+
+        .search-header {
+          display: flex;
+          align-items: center;
+          gap: var(--md-spacing-md);
+          margin-bottom: var(--md-spacing-xl);
+        }
+
+        .search-header .material-icons {
+          font-size: 32px;
+          color: var(--md-primary);
+        }
+
+        .search-header h1 {
+          margin: 0;
+          font-weight: var(--md-font-weight-medium);
+        }
+
+        .search-filters {
+          margin-bottom: var(--md-spacing-xl);
+        }
+
+        .book-card {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          padding: var(--md-spacing-lg);
+        }
+
+        .book-header {
+          display: flex;
+          align-items: center;
+          gap: var(--md-spacing-md);
+          margin-bottom: var(--md-spacing-lg);
+          padding-bottom: var(--md-spacing-md);
+          border-bottom: 1px solid var(--md-outline);
+        }
+
+        .book-header .book-icon {
+          font-size: 32px;
+          color: var(--md-primary);
+        }
+
+        .book-header h3 {
+          margin: 0;
+          font-weight: var(--md-font-weight-medium);
+        }
+
+        .book-content {
+          display: flex;
+          flex-direction: column;
+          gap: var(--md-spacing-lg);
+          flex: 1;
+        }
+
+        .book-info, .donor-info {
+          display: flex;
+          flex-direction: column;
+          gap: var(--md-spacing-sm);
+        }
+
+        .donor-info {
+          padding-top: var(--md-spacing-md);
+          border-top: 1px solid var(--md-outline);
+        }
+
+        .donor-info h4 {
+          margin: 0 0 var(--md-spacing-sm);
+          color: var(--md-on-surface-variant);
+        }
+
+        .info-row {
+          display: flex;
+          align-items: center;
+          gap: var(--md-spacing-sm);
+          color: var(--md-on-surface-variant);
+          font-size: var(--md-font-size-sm);
+        }
+
+        .info-row .material-icons {
+          font-size: 20px;
+          color: var(--md-primary);
+        }
+
+        .info-row strong {
+          color: var(--md-on-surface);
+          font-weight: var(--md-font-weight-medium);
+        }
+
+        .book-actions {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: var(--md-spacing-md);
+          margin-top: auto;
+          padding-top: var(--md-spacing-lg);
+        }
+
+        .no-results {
+          text-align: center;
+          padding: var(--md-spacing-2xl);
+          color: var(--md-on-surface-variant);
+        }
+
+        .no-results .material-icons {
+          font-size: 48px;
+          margin-bottom: var(--md-spacing-md);
+        }
+
+        @media (max-width: 768px) {
+          .search-container {
+            padding: var(--md-spacing-lg);
+          }
+
+          .book-actions {
+            grid-template-columns: 1fr;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .search-container {
+            padding: var(--md-spacing-md);
+          }
+
+          .book-header {
+            flex-direction: column;
+            align-items: flex-start;
+            text-align: center;
+          }
+        }
+      `}</style>
     </div>
   );
 }
-
-// styles נשארים כפי שהגדרת – לא נגעתי בהם
-
-const styles = {
-  page: {
-    background: "#f2f6ff",
-    minHeight: "100vh",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "flex-start",
-    padding: "40px",
-    direction: "rtl"
-  },
-  card: {
-    backgroundColor: "white",
-    padding: "40px",
-    borderRadius: "20px",
-    boxShadow: "0 4px 15px rgba(0,0,0,0.1)",
-    width: "100%",
-    maxWidth: "800px",
-    textAlign: "center"
-  },
-  title: {
-    marginBottom: "30px",
-    color: "#333",
-    fontSize: "28px"
-  },
-  filters: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "15px",
-    marginBottom: "30px"
-  },
-  input: {
-    padding: "10px",
-    borderRadius: "8px",
-    border: "1px solid #ccc",
-    fontSize: "16px"
-  },
-  bookCard: {
-    backgroundColor: "#e6ecff",
-    padding: "20px",
-    marginBottom: "20px",
-    borderRadius: "15px",
-    textAlign: "right",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-  },
-  bookTitleHeader: {
-    background: "linear-gradient(to left, #c3d9ff, #e0ecff)",
-    padding: "10px 15px",
-    borderRadius: "10px",
-    fontSize: "18px",
-    fontWeight: "bold",
-    marginBottom: "15px",
-    display: "inline-block",
-    color: "#1a237e"
-  },
-  detailsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "20px",
-    marginBottom: "10px"
-  },
-  detailBlock: {
-    backgroundColor: "#ffffff",
-    padding: "15px",
-    borderRadius: "10px",
-    border: "1px solid #ddd",
-    fontSize: "15px",
-    lineHeight: "1.6"
-  },
-  reserveButton: {
-    marginTop: "15px",
-    padding: "12px 24px",
-    border: "none",
-    backgroundImage: "linear-gradient(to right, #43cea2, #185a9d)",
-    color: "white",
-    borderRadius: "30px",
-    fontSize: "16px",
-    fontWeight: "bold",
-    cursor: "pointer",
-    boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
-    transition: "all 0.3s ease",
-    alignSelf: "flex-start"
-  }
-};

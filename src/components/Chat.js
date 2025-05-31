@@ -1,3 +1,7 @@
+// Chat Component
+// This component provides real-time private messaging functionality between users
+// It uses Socket.IO for real-time communication and maintains chat history
+
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 import { useUser } from '../context/UserContext';
@@ -5,32 +9,40 @@ import axios from 'axios';
 import { useLocation } from 'react-router-dom';
 import '../styles/components.css';
 
+// Base URL for API calls from environment variables
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 function Chat() {
+  // Get current user data and location state
   const { user } = useUser();
   const location = useLocation();
+  // Get selected user ID if coming from search page
   const selectedUserIdFromSearch = location.state?.selectedUserId || null;
 
-  const [message, setMessage] = useState('');
-  const [chatMessages, setChatMessages] = useState([]);
-  const [socket, setSocket] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [recentChats, setRecentChats] = useState([]);
-  const [roomId, setRoomId] = useState(null);
-  const messagesEndRef = useRef(null);
+  // State Management
+  const [message, setMessage] = useState('');              // Current message input
+  const [chatMessages, setChatMessages] = useState([]);    // Array of chat messages
+  const [socket, setSocket] = useState(null);              // Socket.IO connection
+  const [selectedUser, setSelectedUser] = useState(null);  // Currently selected chat user
+  const [users, setUsers] = useState([]);                  // List of all users
+  const [recentChats, setRecentChats] = useState([]);     // Recent chat conversations
+  const [roomId, setRoomId] = useState(null);             // Current chat room ID
+  const messagesEndRef = useRef(null);                    // Reference for auto-scrolling
 
+  // Initialize Socket.IO connection
   useEffect(() => {
+    // Create new socket connection
     const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
       transports: ['websocket'],
     });
 
     setSocket(newSocket);
 
+    // Listen for incoming private messages
     newSocket.on('receive_private_message', (data) => {
       console.log("📥 התקבלה הודעה חדשה מהשרת:", data);
 
+      // Only add message if it belongs to current room
       if (data.roomId === roomId) {
         setChatMessages((prev) => [...prev, data]);
       } else {
@@ -38,22 +50,27 @@ function Chat() {
       }
     });
 
+    // Handle connection errors
     newSocket.on('connect_error', (err) => {
       console.error('❌ שגיאה בהתחברות ל-socket:', err);
     });
 
+    // Cleanup on unmount
     return () => {
       newSocket.disconnect();
     };
   }, [roomId]);
 
+  // Fetch all users when component mounts
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await axios.get(`${API_BASE}/api/users`);
+        // Filter out current user from the list
         const filteredUsers = response.data.filter(u => u._id !== user?._id);
         setUsers(filteredUsers);
 
+        // If user was selected from search, set them as selected user
         if (selectedUserIdFromSearch) {
           const found = filteredUsers.find(u => u._id === selectedUserIdFromSearch);
           if (found) setSelectedUser(found);
@@ -68,6 +85,7 @@ function Chat() {
     }
   }, [user, selectedUserIdFromSearch]);
 
+  // Fetch recent chat conversations
   useEffect(() => {
     const fetchRecentChats = async () => {
       try {
@@ -83,6 +101,7 @@ function Chat() {
     }
   }, [user]);
 
+  // Join chat rooms for recent conversations
   useEffect(() => {
     if (socket && user && recentChats.length > 0) {
       recentChats.forEach(chatUser => {
@@ -94,18 +113,25 @@ function Chat() {
     }
   }, [socket, user, recentChats]);
 
+  // Handle selected user change
   useEffect(() => {
     if (socket && selectedUser && user) {
+      // Create unique room ID by sorting and joining user IDs
       const newRoomId = [user._id, selectedUser._id].sort().join('_');
       setRoomId(newRoomId);
+      
+      // Join private chat room
       socket.emit('join_private_chat', {
         userId: user._id,
         otherUserId: selectedUser._id
       });
+      
+      // Load previous messages
       fetchMessages(newRoomId);
     }
   }, [selectedUser, socket, user]);
 
+  // Fetch chat history for a room
   const fetchMessages = async (roomId) => {
     try {
       const response = await axios.get(`${API_BASE}/api/messages/room/${roomId}`);
@@ -115,10 +141,12 @@ function Chat() {
     }
   };
 
+  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [chatMessages]);
 
+  // Send a new message
   const sendMessage = () => {
     if (!socket || !roomId || !user || !selectedUser || message.trim() === '') return;
 
@@ -136,6 +164,7 @@ function Chat() {
     <div style={{ padding: 20, maxWidth: 800, margin: '0 auto', direction: 'rtl' }}>
       <h2>💬 צ'אט פרטי</h2>
 
+      {/* Recent Chats Section */}
       {recentChats.length > 0 && (
         <div style={{ marginBottom: 10 }}>
           <strong>שיחות אחרונות:</strong>
@@ -163,6 +192,7 @@ function Chat() {
         </div>
       )}
 
+      {/* User Selection Dropdown */}
       <div style={{ marginBottom: 20 }}>
         <select
           value={selectedUser?._id || ''}
@@ -181,6 +211,7 @@ function Chat() {
         </select>
       </div>
 
+      {/* Chat Messages Area */}
       {selectedUser && (
         <>
           <div style={{
@@ -191,6 +222,7 @@ function Chat() {
             marginBottom: 10,
             backgroundColor: '#f9f9f9'
           }}>
+            {/* Message Bubbles */}
             {chatMessages.map((msg, index) => (
               <div
                 key={index}
@@ -221,9 +253,11 @@ function Chat() {
                 </div>
               </div>
             ))}
+            {/* Auto-scroll anchor */}
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Message Input Area */}
           <div style={{ display: 'flex' }}>
             <input
               type="text"
