@@ -67,6 +67,24 @@ export default function ReservedBooks() {
     navigate("/chat", { state: { selectedUserId: donorId } });
   };
 
+  const formatRemainingTime = (dateString) => {
+    if (!dateString) return "אין מידע";
+    const now = new Date();
+    const end = new Date(dateString);
+    const diffMs = end - now;
+
+    if (diffMs <= 0) return "פג תוקף השריון";
+
+    const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+    const diffMinutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+
+    if (diffHours > 0) {
+      return `${diffHours} שעות ו-${diffMinutes} דקות`;
+    } else {
+      return `${diffMinutes} דקות`;
+    }
+  };
+
   return (
     <div style={styles.page}>
       <div style={styles.card}>
@@ -82,6 +100,9 @@ export default function ReservedBooks() {
               <p>כיתה: {book.grade}</p>
               <p>תחום: {book.subject || "לא ידוע"}</p>
               <p>מצב: {book.condition}</p>
+              <p style={styles.timeLeft}>
+                ⏳ הזמן שנותר לשריון: {formatRemainingTime(book.reservedUntil)}
+              </p>
               <div style={styles.buttons}>
                 <button onClick={() => handleConfirmPickup(book._id)} style={styles.confirm}>
                   ✔️ אשר קבלה
@@ -137,11 +158,18 @@ const styles = {
     textAlign: "right",
     boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
   },
-  buttons: {
+  timeLeft: {
+    color: "#1a237e",
+    fontSize: "14px",
     marginTop: "10px",
+    fontWeight: "bold"
+  },
+  buttons: {
+    marginTop: "15px",
     display: "flex",
     gap: "10px",
-    justifyContent: "center"
+    justifyContent: "center",
+    flexWrap: "wrap"
   },
   confirm: {
     backgroundColor: "#4caf50",
