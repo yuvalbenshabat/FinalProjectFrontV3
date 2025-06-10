@@ -1,0 +1,206 @@
+:root {
+  --color-primary: #2d3e50;         /* כחול כהה מודרני */
+  --color-bg: #f7f9fc;              /* רקע כללי רך */
+  --color-card: #ffffff;           /* רקע כרטיס */
+  --color-border: #e0e6ed;         /* גבול עדין */
+  --color-text: #1f2d3d;           /* טקסט כהה נעים */
+  --color-subtext: #6b7c93;
+  --color-danger: #e74c3c;
+  --color-action: #34495e;         /* כפתור כהה */
+  --radius: 12px;
+  --shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body {
+  background-color: var(--color-bg);
+  font-family: 'Segoe UI', sans-serif;
+  color: var(--color-text);
+  margin: 0;
+  padding: 0;
+  direction: rtl;
+}
+
+.wishlist-container {
+  max-width: 1100px;
+  margin: auto;
+  padding: 32px 24px;
+}
+
+.wishlist-title {
+  font-size: 1.6rem;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.add-child-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 32px;
+  justify-content: center;
+}
+
+.add-child-form input,
+.add-child-form select {
+  width: 200px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 0.95rem;
+  background-color: white;
+  color: var(--color-text);
+}
+
+.add-child-form button {
+  background-color: var(--color-action);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.add-child-form button:hover {
+  background-color: #22313f;
+}
+
+.children-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.child-card {
+  background-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+.child-name {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  color: var(--color-primary);
+}
+
+.books-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.book-card {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.book-title {
+  font-weight: bold;
+  font-size: 1rem;
+  margin-bottom: 4px;
+}
+
+.book-author {
+  font-size: 0.9rem;
+  color: var(--color-subtext);
+}
+
+.book-actions {
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.donors-button,
+.remove-button {
+  font-size: 0.85rem;
+  padding: 8px 12px;
+  border-radius: var(--radius);
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+}
+
+.donors-button {
+  background-color: var(--color-action);
+  color: white;
+}
+
+.remove-button {
+  background-color: var(--color-danger);
+  color: white;
+}
+
+.book-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.book-selector select {
+  flex: 1;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  background-color: white;
+}
+
+.book-selector button {
+  padding: 10px 16px;
+  background-color: var(--color-action);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.book-selector button:hover {
+  background-color: #1d2c3b;
+}
+
+@media (max-width: 600px) {
+  .add-child-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .add-child-form input,
+  .add-child-form select,
+  .add-child-form button,
+  .book-selector select,
+  .book-selector button {
+    width: 100%;
+  }
+
+.child-selector {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.child-selector select {
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--color-border);
+  font-size: 1rem;
+  width: 240px;
+}
+
+
+}
