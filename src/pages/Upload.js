@@ -3,7 +3,7 @@
 // It validates books against an approved list and saves them to the database
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Html5QrcodeScanner, Html5QrcodeScanType } from "html5-qrcode";
+import { Html5Qrcode, Html5QrcodeScanType } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
 import "../styles/theme.css";
 
@@ -32,6 +32,7 @@ export default function Upload() {
   const [imageFile, setImageFile] = useState(null);
   const [isScanning, setIsScanning] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [cameraError, setCameraError] = useState(false);
 
   // Refs for barcode scanner management
   const scannerRef = useRef(null);
@@ -165,51 +166,184 @@ export default function Upload() {
   }, []);
 
   // Initialize barcode scanner
-  const startScanner = () => {
-    if (scannerRef.current) return;
-
-    const scanner = new Html5QrcodeScanner("qr-reader", {
-      fps: 10,
-      qrbox: { width: 500, height: 300 },
-      rememberLastUsedCamera: true,
-      supportedScanTypes: [Html5QrcodeScanType.SCAN_TYPE_CAMERA],
-      aspectRatio: 1.7777778,
-    });
-
-    scanner.render(
-      async (decodedText) => {
-        try {
-          await scanner.clear();
-          scannerRef.current = null;
-        } catch (err) {
-          console.warn("שגיאה בסגירת הסורק:", err);
-        }
-
-        await handleBarcodeScanned(decodedText);
-      },
-      (errorMessage) => {
-        if (
-          !errorMessage.includes("No MultiFormat Readers") &&
-          !errorMessage.includes("parse error")
-        ) {
-          console.warn("שגיאת סריקה:", errorMessage);
-        }
+  const startScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+      } catch (err) {
+        console.warn("Error stopping scanner:", err);
       }
-    );
+      scannerRef.current = null;
+    }
 
-    scannerRef.current = scanner;
+    // Set scanning state first
+    setIsScanning(true);
+    setError(""); // Clear any previous errors
+    setCameraError(false); // Clear camera error flag
+
+    // Wait for the DOM to update and then initialize scanner
+    setTimeout(async () => {
+      try {
+        // Clear the qr-reader div content
+        const qrReader = document.getElementById("qr-reader");
+        if (qrReader) {
+          qrReader.innerHTML = "";
+        }
+
+        // Check if camera is available
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const videoDevices = devices.filter(device => device.kind === 'videoinput');
+        
+        if (videoDevices.length === 0) {
+          throw new Error("לא נמצאה מצלמה במכשיר");
+        }
+
+        const scanner = new Html5Qrcode("qr-reader");
+
+        const config = {
+          fps: 10,
+          qrbox: { width: 300, height: 200 },
+          aspectRatio: 1.0
+        };
+
+        // Try back camera first, fallback to any available camera
+        let cameraConfig = { facingMode: "environment" };
+        
+        try {
+          await scanner.start(
+            cameraConfig,
+            config,
+            async (decodedText) => {
+              if (scannerRef.current) {
+                try {
+                  await scannerRef.current.stop();
+                  setIsScanning(false);
+                } catch (err) {
+                  console.warn("Error stopping scanner:", err);
+                }
+                scannerRef.current = null;
+              }
+
+              await handleBarcodeScanned(decodedText);
+            },
+            (errorMessage) => {
+              if (
+                !errorMessage.includes("No MultiFormat Readers") &&
+                !errorMessage.includes("parse error")
+              ) {
+                console.warn("Scanner error:", errorMessage);
+              }
+            }
+          );
+        } catch (backCameraError) {
+          // If back camera fails, try front camera
+          console.warn("Back camera failed, trying front camera:", backCameraError);
+          cameraConfig = { facingMode: "user" };
+          
+          await scanner.start(
+            cameraConfig,
+            config,
+            async (decodedText) => {
+              if (scannerRef.current) {
+                try {
+                  await scannerRef.current.stop();
+                  setIsScanning(false);
+                } catch (err) {
+                  console.warn("Error stopping scanner:", err);
+                }
+                scannerRef.current = null;
+              }
+
+              await handleBarcodeScanned(decodedText);
+            },
+            (errorMessage) => {
+              if (
+                !errorMessage.includes("No MultiFormat Readers") &&
+                !errorMessage.includes("parse error")
+              ) {
+                console.warn("Scanner error:", errorMessage);
+              }
+            }
+          );
+        }
+
+        scannerRef.current = scanner;
+        
+      } catch (err) {
+        console.error("Error starting scanner:", err);
+        let errorMsg = "שגיאה בפתיחת המצלמה.";
+        
+        // Safely get error message
+        const errorMessage = err.message || err.toString() || '';
+        
+        if (errorMessage.includes("Device in use") || errorMessage.includes("NotReadableError")) {
+          errorMsg = "המצלמה בשימוש על ידי אפליקציה אחרת. אנא סגור אפליקציות אחרות ונסה שוב.";
+        } else if (errorMessage.includes("Permission denied") || errorMessage.includes("NotAllowedError")) {
+          errorMsg = "נדחתה הגישה למצלמה. אנא אפשר גישה למצלמה בהגדרות הדפדפן.";
+        } else if (errorMessage.includes("לא נמצאה מצלמה")) {
+          errorMsg = errorMessage;
+        } else if (errorMessage.includes("NotFoundError")) {
+          errorMsg = "לא נמצאה מצלמה במכשיר זה.";
+        } else {
+          errorMsg = "שגיאה בפתיחת המצלמה. אנא בדוק שנתת הרשאה לגישה למצלמה.";
+        }
+        
+        setError(errorMsg);
+        setIsScanning(false);
+        setCameraError(true);
+      }
+    }, 100); // Small delay to ensure DOM is updated
   };
 
-  // Initialize scanner on component mount
+  const stopScanner = async () => {
+    if (scannerRef.current) {
+      try {
+        await scannerRef.current.stop();
+        console.log("Scanner stopped successfully");
+      } catch (err) {
+        console.warn("Error stopping scanner:", err);
+      }
+      scannerRef.current = null;
+    }
+    
+    // Also clear the qr-reader div content
+    const qrReader = document.getElementById("qr-reader");
+    if (qrReader) {
+      qrReader.innerHTML = "";
+    }
+    
+    setIsScanning(false);
+    setError(""); // Clear any errors when stopping
+    setCameraError(false); // Clear camera error flag
+  };
+
+  // Initialize scanner on component mount and cleanup on unmount
   useEffect(() => {
-    startScanner();
     return () => {
       if (scannerRef.current) {
-        scannerRef.current.clear().catch(() => {});
+        try {
+          scannerRef.current.stop().catch(console.warn);
+        } catch (err) {
+          console.warn("Error cleaning up scanner:", err);
+        }
         scannerRef.current = null;
       }
+      setIsScanning(false);
+      // Clear the qr-reader div content on unmount
+      const qrReader = document.getElementById("qr-reader");
+      if (qrReader) {
+        qrReader.innerHTML = "";
+      }
     };
-  }, [handleBarcodeScanned]);
+  }, []);
+
+  const handleScanButtonClick = async () => {
+    if (isScanning) {
+      await stopScanner();
+    } else {
+      await startScanner();
+    }
+  };
 
   // Handle form input changes
   const handleChange = (e) => {
@@ -223,6 +357,7 @@ export default function Upload() {
         <div className="upload-card card elevation-1">
           <div className="upload-header">
             <span className="material-icons">upload_file</span>
+             
             <h1>העלאת ספר לתרומה</h1>
           </div>
 
@@ -239,7 +374,42 @@ export default function Upload() {
               <span className="material-icons">qr_code_scanner</span>
               <h3>סריקת ברקוד</h3>
             </div>
-            <div id="qr-reader" className="scanner"></div>
+            {!isScanning ? (
+              <div className="scanner-placeholder">
+                <img 
+                  width="64" 
+                  src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAzNzEuNjQzIDM3MS42NDMiIHN0eWxlPSJlbmFibGUtYmFja2dyb3VuZDpuZXcgMCAwIDM3MS42NDMgMzcxLjY0MyIgeG1sOnNwYWNlPSJwcmVzZXJ2ZSI+PHBhdGggZD0iTTEwNS4wODQgMzguMjcxaDE2My43Njh2MjBIMTA1LjA4NHoiLz48cGF0aCBkPSJNMzExLjU5NiAxOTAuMTg5Yy03LjQ0MS05LjM0Ny0xOC40MDMtMTYuMjA2LTMyLjc0My0yMC41MjJWMzBjMC0xNi41NDItMTMuNDU4LTMwLTMwLTMwSDEyNS4wODRjLTE2LjU0MiAwLTMwIDEzLjQ1OC0zMCAzMHYxMjAuMTQzaC04LjI5NmMtMTYuNTQyIDAtMzAgMTMuNDU4LTMwIDMwdjEuMzMzYTI5LjgwNCAyOS44MDQgMCAwIDAgNC42MDMgMTUuOTM5Yy03LjM0IDUuNDc0LTEyLjEwMyAxNC4yMjEtMTIuMTAzIDI0LjA2MXYxLjMzM2MwIDkuODQgNC43NjMgMTguNTg3IDEyLjEwMyAyNC4wNjJhMjkuODEgMjkuODEgMCAwIDAtNC42MDMgMTUuOTM4djEuMzMzYzAgMTYuNTQyIDEzLjQ1OCAzMCAzMCAzMGg4LjMyNGMuNDI3IDExLjYzMSA3LjUwMyAyMS41ODcgMTcuNTM0IDI2LjE3Ny45MzEgMTAuNTAzIDQuMDg0IDMwLjE4NyAxNC43NjggNDUuNTM3YTkuOTg4IDkuOTg4IDAgMCAwIDguMjE2IDQuMjg4IDkuOTU4IDkuOTU4IDAgMCAwIDUuNzA0LTEuNzkzYzQuNTMzLTMuMTU1IDUuNjUtOS4zODggMi40OTUtMTMuOTIxLTYuNzk4LTkuNzY3LTkuNjAyLTIyLjYwOC0xMC43Ni0zMS40aDgyLjY4NWMuMjcyLjQxNC41NDUuODE4LjgxNSAxLjIxIDMuMTQyIDQuNTQxIDkuMzcyIDUuNjc5IDEzLjkxMyAyLjUzNCA0LjU0Mi0zLjE0MiA1LjY3Ny05LjM3MSAyLjUzNS0xMy45MTMtMTEuOTE5LTE3LjIyOS04Ljc4Ny0zNS44ODQgOS41ODEtNTcuMDEyIDMuMDY3LTIuNjUyIDEyLjMwNy0xMS43MzIgMTEuMjE3LTI0LjAzMy0uODI4LTkuMzQzLTcuMTA5LTE3LjE5NC0xOC42NjktMjMuMzM3YTkuODU3IDkuODU3IDAgMCAwLTEuMDYxLS40ODZjLS40NjYtLjE4Mi0xMS40MDMtNC41NzktOS43NDEtMTUuNzA2IDEuMDA3LTYuNzM3IDE0Ljc2OC04LjI3MyAyMy43NjYtNy42NjYgMjMuMTU2IDEuNTY5IDM5LjY5OCA3LjgwMyA0Ny44MzYgMTguMDI2IDUuNzUyIDcuMjI1IDcuNjA3IDE2LjYyMyA1LjY3MyAyOC43MzMtLjQxMyAyLjU4NS0uODI0IDUuMjQxLTEuMjQ1IDcuOTU5LTUuNzU2IDM3LjE5NC0xMi45MTkgODMuNDgzLTQ5Ljg3IDExNC42NjEtNC4yMjEgMy41NjEtNC43NTYgOS44Ny0xLjE5NCAxNC4wOTJhOS45OCA5Ljk4IDAgMCAwIDcuNjQ4IDMuNTUxIDkuOTU1IDkuOTU1IDAgMCAwIDYuNDQ0LTIuMzU4YzQyLjY3Mi0zNi4wMDUgNTAuODAyLTg4LjUzMyA1Ni43MzctMTI2Ljg4OC40MTUtMi42ODQuODIxLTUuMzA5IDEuMjI5LTcuODYzIDIuODM0LTE3LjcyMS0uNDU1LTMyLjY0MS05Ljc3Mi00NC4zNDV6bS0yMzIuMzA4IDQyLjYyYy01LjUxNCAwLTEwLTQuNDg2LTEwLTEwdi0xLjMzM2MwLTUuNTE0IDQuNDg2LTEwIDEwLTEwaDE1djIxLjMzM2gtMTV6bS0yLjUtNTIuNjY2YzAtNS41MTQgNC40ODYtMTAgMTAtMTBoNy41djIxLjMzM2gtNy41Yy01LjUxNCAwLTEwLTQuNDg2LTEwLTEwdi0xLjMzM3ptMTcuNSA5My45OTloLTcuNWMtNS41MTQgMC0xMC00LjQ4Ni0xMC0xMHYtMS4zMzNjMC01LjUxNCA0LjQ4Ni0xMCAxMC0xMGg3LjV2MjEuMzMzem0zMC43OTYgMjguODg3Yy01LjUxNCAwLTEwLTQuNDg2LTEwLTEwdi04LjI3MWg5MS40NTdjLS44NTEgNi42NjgtLjQzNyAxMi43ODcuNzMxIDE4LjI3MWgtODIuMTg4em03OS40ODItMTEzLjY5OGMtMy4xMjQgMjAuOTA2IDEyLjQyNyAzMy4xODQgMjEuNjI1IDM3LjA0IDUuNDQxIDIuOTY4IDcuNTUxIDUuNjQ3IDcuNzAxIDcuMTg4LjIxIDIuMTUtMi41NTMgNS42ODQtNC40NzcgNy4yNTEtLjQ4Mi4zNzgtLjkyOS44LTEuMzM1IDEuMjYxLTYuOTg3IDcuOTM2LTExLjk4MiAxNS41Mi0xNS40MzIgMjIuNjg4aC05Ny41NjRWMzBjMC01LjUxNCA0LjQ4Ni0xMCAxMC0xMGgxMjMuNzY5YzUuNTE0IDAgMTAgNC40ODYgMTAgMTB2MTM1LjU3OWMtMy4wMzItLjM4MS02LjE1LS42OTQtOS4zODktLjkxNC0yNS4xNTktMS42OTQtNDIuMzcgNy43NDgtNDQuODk4IDI0LjY2NnoiLz48cGF0aCBkPSJNMTc5LjEyOSA4My4xNjdoLTI0LjA2YTUgNSAwIDAgMC01IDV2MjQuMDYxYTUgNSAwIDAgMCA1IDVoMjQuMDZhNSA1IDAgMCAwIDUtNVY4OC4xNjdhNSA1IDAgMCAwLTUtNXpNMTcyLjYyOSAxNDIuODZoLTEyLjU2VjEzMC44YTUgNSAwIDEgMC0xMCAwdjE3LjA2MWE1IDUgMCAwIDAgNSA1aDE3LjU2YTUgNSAwIDEgMCAwLTEwLjAwMXpNMjE2LjU2OCA4My4xNjdoLTI0LjA2YTUgNSAwIDAgMC01IDV2MjQuMDYxYTUgNSAwIDAgMCA1IDVoMjQuMDZhNSA1IDAgMCAwIDUtNVY4OC4xNjdhNSA1IDAgMCAwLTUtNXptLTUgMjQuMDYxaC0xNC4wNlY5My4xNjdoMTQuMDZ2MTQuMDYxek0yMTEuNjY5IDEyNS45MzZIMTk3LjQxYTUgNSAwIDAgMC01IDV2MTQuMjU3YTUgNSAwIDAgMCA1IDVoMTQuMjU5YTUgNSAwIDAgMCA1LTV2LTE0LjI1N2E1IDUgMCAwIDAtNS01eiIvPjwvc3ZnPg==" 
+                  alt="קליק כדי להתחיל סריקה" 
+                  style={{ opacity: 0.8 }}
+                />
+                <p style={{ marginTop: '20px', color: '#666', textAlign: 'center' }}>
+                  לחץ על "התחל סריקה" כדי לפתוח את המצלמה
+                </p>
+              </div>
+            ) : (
+              <div id="qr-reader" className="scanner"></div>
+            )}
+            <button 
+              onClick={handleScanButtonClick}
+              className="scan-button"
+            >
+              {isScanning ? (
+                <>
+                  <span className="material-icons">stop</span>
+                  הפסק סריקה
+                </>
+              ) : cameraError ? (
+                <>
+                  <span className="material-icons">refresh</span>
+                  נסה שוב
+                </>
+              ) : (
+                <>
+                  <span className="material-icons">qr_code_scanner</span>
+                  התחל סריקה
+                </>
+              )}
+            </button>
           </div>
 
           {/* Book donation form */}
@@ -464,6 +634,7 @@ export default function Upload() {
         .upload-header h1 {
           margin: 0;
           color: var(--text-primary);
+          font-size: 24px;
         }
 
         .scanner-container {
@@ -492,6 +663,32 @@ export default function Upload() {
         .scanner {
           border-radius: var(--radius-md);
           overflow: hidden;
+        }
+
+        .scanner-placeholder {
+          display: flex;
+          flex-direction: column;
+          justify-content: center;
+          align-items: center;
+          height: 300px;
+          background-color: #f8f9fa;
+          border: 2px dashed #dee2e6;
+          border-radius: var(--radius-md);
+          margin: 10px 0;
+          transition: all 0.3s ease;
+        }
+
+        .scanner-placeholder img {
+          transition: transform 0.3s ease;
+        }
+
+        .scanner-placeholder img:hover {
+          transform: scale(1.1);
+        }
+
+        .scanner-placeholder:hover {
+          background-color: #e9ecef;
+          border-color: var(--primary);
         }
 
         .upload-form {
@@ -590,41 +787,54 @@ export default function Upload() {
 
         /* Override scanner styles */
         #qr-reader {
-          width: 60% !important;
-          max-width: 320px;
+          width: 100% !important;
+          max-width: 500px !important;
           margin: 0 auto;
+          border: none !important;
+          box-shadow: none !important;
         }
 
         #qr-reader video {
           width: 100% !important;
           height: auto !important;
-          max-height: 100px !important;
+          max-height: 350px !important;
+          margin: 0 auto;
+          border-radius: 8px;
         }
 
         #qr-reader__scan_region {
           background: var(--background) !important;
+          padding: 0 !important;
         }
 
         #qr-reader__scan_region img {
           width: 100% !important;
           height: auto !important;
+          max-height: 350px !important;
+          object-fit: contain !important;
         }
 
         #qr-reader__dashboard {
           padding: var(--spacing-md) !important;
           background: var(--background) !important;
+          border-top: 1px solid #e0e0e0 !important;
+          margin-top: var(--spacing-md) !important;
         }
 
         #qr-reader__dashboard button {
-          padding: 7px 8px !important;
-          border-radius: var(--radius-full) !important;
+          padding: 8px 16px !important;
+          border-radius: 8px !important;
           background: var(--primary) !important;
           color: white !important;
           border: none !important;
           cursor: pointer !important;
           font-family: var(--font-family) !important;
-          font-size: var(--font-size-sm) !important;
+          font-size: 14px !important;
           transition: background-color var(--transition-fast) !important;
+          width: 100% !important;
+          max-width: 200px !important;
+          margin: 0 auto !important;
+          display: block !important;
         }
 
         #qr-reader__dashboard button:hover {
@@ -632,29 +842,105 @@ export default function Upload() {
         }
 
         #qr-reader__dashboard select {
-          padding: var(--spacing-sm) !important;
-          border-radius: var(--radius-sm) !important;
+          width: 100% !important;
+          max-width: 200px !important;
+          margin: 0 auto var(--spacing-md) !important;
+          display: block !important;
+          padding: 8px !important;
+          border-radius: 8px !important;
           border: 1px solid var(--border-color) !important;
           font-family: var(--font-family) !important;
-          font-size: var(--font-size-sm) !important;
+          font-size: 14px !important;
+          background-color: white !important;
         }
 
         @media (max-width: 768px) {
           .upload-page {
-            padding: var(--spacing-md);
+            padding: calc(var(--spacing-xl) + 48px) var(--spacing-sm) var(--spacing-sm) var(--spacing-sm);
+            margin-top: 0;
           }
 
           .upload-card {
-            padding: var(--spacing-lg);
+            padding: var(--spacing-md);
+            margin: 0;
+            border-radius: 0;
+            min-height: calc(100vh - var(--spacing-xl) - 48px);
+          }
+
+          .upload-header {
+            margin-bottom: var(--spacing-lg);
+          }
+
+          .upload-header h1 {
+            font-size: 20px;
+          }
+
+          .upload-header .material-icons {
+            font-size: 24px;
+          }
+
+          .scanner-container {
+            margin: -var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+            border-radius: 0;
+          }
+
+          #qr-reader {
+            max-width: 100% !important;
+          }
+
+          #qr-reader video {
+            max-height: 300px !important;
+            border-radius: 0;
           }
 
           .input-row {
             flex-direction: column;
-            gap: 9px;
+            gap: 12px;
           }
 
           .input-group {
             width: 100%;
+          }
+
+          .input-field {
+            font-size: 16px; /* Prevents zoom on mobile */
+            height: 44px; /* Bigger touch target */
+          }
+
+          .button-secondary,
+          .button-primary {
+            height: 44px; /* Bigger touch target */
+            font-size: 16px;
+          }
+
+          .scan-button {
+            max-width: 100%;
+            height: 48px;
+          }
+        }
+
+        @media (max-width: 480px) {
+          .upload-page {
+            padding-top: calc(var(--spacing-xl) + 56px);
+          }
+
+          .upload-header h1 {
+            font-size: 18px;
+          }
+
+          .scanner-header h3 {
+            font-size: 16px;
+          }
+
+          #qr-reader video {
+            max-height: 250px !important;
+          }
+
+          .input-field,
+          .button-secondary,
+          .button-primary {
+            font-size: 15px;
           }
         }
 
@@ -800,6 +1086,70 @@ export default function Upload() {
 
         .button-secondary .material-icons {
           font-size: 20px;
+        }
+
+        .scan-button {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 8px;
+          width: 100%;
+          max-width: 200px;
+          margin: 16px auto;
+          padding: 12px 24px;
+          border: none;
+          border-radius: 8px;
+          background-color: ${isScanning ? '#dc2626' : '#10b981'};
+          color: white;
+          font-size: 16px;
+          font-weight: 500;
+          cursor: pointer;
+          transition: all 0.2s ease;
+          direction: rtl;
+        }
+
+        .scan-button:hover {
+          background-color: ${isScanning ? '#b91c1c' : '#059669'};
+        }
+
+        .scan-button .material-icons {
+          font-size: 20px;
+        }
+
+        @media (max-width: 768px) {
+          .scan-button {
+            max-width: 100%;
+            height: 48px;
+          }
+        }
+
+        /* Hide default scanner buttons */
+        #qr-reader__dashboard_section_csr button,
+        #qr-reader__status_span,
+        #qr-reader__dashboard_section_swaplink,
+        #qr-reader__dashboard_section_fsr {
+          display: none !important;
+        }
+
+        #qr-reader__dashboard_section {
+          text-align: center !important;
+        }
+
+        #qr-reader__camera_selection {
+          margin: 8px auto !important;
+          max-width: 200px !important;
+          direction: ltr !important;
+        }
+
+        #qr-reader {
+          border: none !important;
+          padding: 0 !important;
+        }
+
+        #qr-reader__dashboard {
+          margin-top: 0 !important;
+          padding-top: 0 !important;
+          border-top: none !important;
         }
       `}</style>
     </div>

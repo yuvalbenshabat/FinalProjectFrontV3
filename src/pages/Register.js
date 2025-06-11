@@ -68,6 +68,10 @@ export default function Register() {
       setError("שם המשתמש לא יכול להיות ריק או להכיל רק רווחים");
       return;
     }
+    if (/\d/.test(username)) {
+      setError("השם המלא לא יכול להכיל מספרים");
+      return;
+    }
     if (!email.includes("@") || email.length < 5) {
       setError("האימייל חייב להכיל @ ולהיות לפחות 5 תווים");
       return;
@@ -152,7 +156,13 @@ export default function Register() {
               className="input-field"
               placeholder="שם מלא" 
               value={username} 
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                // Allow only letters, spaces, and Hebrew characters
+                if (!/\d/.test(value)) {
+                  setUsername(value);
+                }
+              }}
               disabled={isLoading}
             />
           </div>

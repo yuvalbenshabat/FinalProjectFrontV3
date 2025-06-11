@@ -15,6 +15,13 @@ export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Function to show only the first name (before first space)
+  const getFirstName = (username) => {
+    if (!username) return '';
+    // Split by space and return only the first part
+    return username.split(' ')[0];
+  };
+
   // Hide navbar on login and register pages
   const hideNavbar = location.pathname === "/" || location.pathname === "/register";
 
@@ -95,8 +102,8 @@ export default function Navbar() {
           {/* User Information and Logout Section */}
           {user && (
             <div className="navbar-user">
-              <span className="navbar-username">
-              {user.username}<span className="material-icons">account_circle</span> 
+              <span className="navbar-username" title={user.username}>
+              {getFirstName(user.username)}<span className="material-icons">account_circle</span>
               </span>
               <button
                 onClick={() => {
