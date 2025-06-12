@@ -14,7 +14,7 @@ import { useUser } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import "../styles/theme.css";
-import "../styles/Home.css";
+import "../styles/home.css";
 
 function HomePage() {
   // Get user context and navigation utility
