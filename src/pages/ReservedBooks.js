@@ -1,7 +1,12 @@
 // 📁 נתיב: /pages/ReservedBooks.js
 // Reserved Books Component
-// This component displays and manages books that the current user has reserved
-// It allows users to confirm pickup, cancel reservations, and chat with donors
+// This component manages and displays books that users have reserved
+// It provides functionality for:
+// - Viewing reserved books
+// - Confirming book pickup
+// - Canceling reservations
+// - Chatting with book donors
+// - Tracking reservation time limits
 
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
@@ -12,15 +17,15 @@ import "../styles/theme.css";
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function ReservedBooks() {
-  // Get current user data and navigation function
+  // Get current user data and navigation function from context/hooks
   const { user } = useUser();
   const navigate = useNavigate();
 
-  // State for reserved books and loading status
+  // State management for reserved books and loading status
   const [reservedBooks, setReservedBooks] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Fetch user's reserved books from the server
+  // Fetch all reserved books for the current user
   const fetchReservedBooks = async () => {
     if (!user) return;
     try {
@@ -35,12 +40,13 @@ export default function ReservedBooks() {
     }
   };
 
-  // Load reserved books when component mounts or user changes
+  // Load reserved books on component mount and user changes
   useEffect(() => {
     fetchReservedBooks();
   }, [user]);
 
-  // Handle confirmation of book pickup
+  // Handle confirmation when user picks up a book
+  // This will remove the book from reserved list
   const handleConfirmPickup = async (bookId) => {
     if (!window.confirm("האם אתה בטוח שהספר נמסר בהצלחה?")) return;
     try {
@@ -61,7 +67,8 @@ export default function ReservedBooks() {
     }
   };
 
-  // Handle cancellation of book reservation
+  // Handle cancellation of a book reservation
+  // This will make the book available for others
   const handleCancelReservation = async (bookId) => {
     if (!window.confirm("האם אתה בטוח שברצונך לבטל את השריון?")) return;
     try {
@@ -82,12 +89,13 @@ export default function ReservedBooks() {
     }
   };
 
-  // Navigate to chat with book donor
+  // Navigate to chat screen with the book donor
   const handleChat = (donorId) => {
     navigate("/chat", { state: { selectedUserId: donorId } });
   };
 
-  // Calculate and format remaining time for reservation
+  // Calculate and format the remaining time for a reservation
+  // Returns a string showing hours and minutes left
   const formatRemainingTime = (dateString) => {
     if (!dateString) return "אין מידע";
     const now = new Date();
@@ -106,10 +114,13 @@ export default function ReservedBooks() {
     }
   };
 
+  // Main component render
+  // Displays a grid of reserved books with their details and actions
   return (
     <div className="md-container">
       <div className="search-page">
         <div className="md-card search-container">
+          {/* Header section with title and count */}
           <div className="search-header">
             <span className="material-icons">library_books</span>
             <h1 className="md-text-xl">הספרים ששיריינתי</h1>
@@ -120,21 +131,27 @@ export default function ReservedBooks() {
             )}
           </div>
 
+          {/* Main content section */}
           <div className="search-results">
+            {/* Loading state */}
             {loading ? (
               <div className="md-loading">
                 <div className="md-loading-spinner" />
                 <span>טוען ספרים...</span>
               </div>
             ) : reservedBooks.length > 0 ? (
+              // Grid of reserved books
               <div className="books-grid">
                 {reservedBooks.map((book) => (
+                  // Individual book card
                   <div key={book._id} className="book-card">
                     <div className="book-card__content">
+                      {/* Book main information */}
                       <div className="book-card__main-info">
                         <h3 className="book-card__title">{book.bookTitle}</h3>
 
                         <div className="book-card__content-wrapper">
+                          {/* Book image section */}
                           <div className="book-card__image-container">
                             {book.imgUrl ? (
                               <img
@@ -149,7 +166,9 @@ export default function ReservedBooks() {
                             )}
                           </div>
 
+                          {/* Book details section */}
                           <div className="book-card__details">
+                            {/* Donor information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__label">תורם: </span>
                               <span className="book-card__value" style={{ color: '#10b981', fontWeight: 600 }}>
@@ -157,12 +176,14 @@ export default function ReservedBooks() {
                               </span>
                             </div>
 
+                            {/* Author information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__value">
                                 {book.author}
                               </span>
                             </div>
 
+                            {/* Grade information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__label">כיתה: </span>
                               <span className="book-card__value">
@@ -170,6 +191,7 @@ export default function ReservedBooks() {
                               </span>
                             </div>
 
+                            {/* Subject information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__label">תחום: </span>
                               <span className="book-card__value">
@@ -179,6 +201,7 @@ export default function ReservedBooks() {
                           </div>
                         </div>
 
+                        {/* Book condition and time remaining tags */}
                         <div className="book-card__tags">
                           <span className="book-card__condition-tag">
                             <span className="book-card__tag-label">מצב: </span>
@@ -207,7 +230,9 @@ export default function ReservedBooks() {
                         </div>
                       </div>
 
+                      {/* Action buttons section */}
                       <div className="book-card__actions">
+                        {/* Confirm pickup button */}
                         <button
                           className="book-card__button book-card__button--primary"
                           onClick={() => handleConfirmPickup(book._id)}
@@ -215,6 +240,7 @@ export default function ReservedBooks() {
                           <span className="material-icons">check_circle</span>
                           אשר קבלה
                         </button>
+                        {/* Cancel reservation button */}
                         <button
                           className="book-card__button book-card__button--secondary"
                           onClick={() => handleCancelReservation(book._id)}
@@ -227,6 +253,7 @@ export default function ReservedBooks() {
                           <span className="material-icons">cancel</span>
                           בטל שריון
                         </button>
+                        {/* Chat with donor button */}
                         <button
                           className="book-card__button book-card__button--secondary"
                           onClick={() => handleChat(book.userId)}
@@ -240,6 +267,7 @@ export default function ReservedBooks() {
                 ))}
               </div>
             ) : (
+              // Empty state
               <div className="no-results">
                 <span className="material-icons">inbox</span>
                 <p>אין ספרים משוריינים</p>

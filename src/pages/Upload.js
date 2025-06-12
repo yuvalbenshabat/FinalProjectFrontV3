@@ -3,9 +3,10 @@
 // It validates books against an approved list and saves them to the database
 
 import React, { useEffect, useRef, useState, useCallback } from "react";
-import { Html5Qrcode, Html5QrcodeScanType } from "html5-qrcode";
+import { Html5QrcodeScanner } from "html5-qrcode";
 import { useUser } from "../context/UserContext";
 import "../styles/theme.css";
+import { useNavigate } from 'react-router-dom';
 
 // Base URL for API calls from environment variables
 const API_BASE = process.env.REACT_APP_API_BASE;
@@ -198,7 +199,7 @@ export default function Upload() {
           throw new Error("לא נמצאה מצלמה במכשיר");
         }
 
-        const scanner = new Html5Qrcode("qr-reader");
+        const scanner = new Html5QrcodeScanner("qr-reader");
 
         const config = {
           fps: 10,

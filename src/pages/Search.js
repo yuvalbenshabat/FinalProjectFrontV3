@@ -1,17 +1,30 @@
+// Search Component
+// This component provides a comprehensive search interface for donated books
+// Features:
+// - Advanced filtering options (title, author, grade, condition)
+// - Distance-based search using user's location
+// - Book reservation functionality
+// - Chat with book donors
+// - Responsive grid layout for search results
+
 import React, { useEffect, useState } from "react";
 import { useUser } from "../context/UserContext";
 import { useLocation, useNavigate } from "react-router-dom";
 import "../styles/theme.css";
 
+// Base URL for API calls from environment variables
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 export default function Search() {
+  // Get user data and navigation functions from context/hooks
   const { user } = useUser();
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Extract search parameters from navigation state
   const { title = "", grade = "" } = location.state || {};
 
+  // State for search filters
   const [filters, setFilters] = useState({
     bookTitle: title,
     author: "",
@@ -19,22 +32,26 @@ export default function Search() {
     condition: ""
   });
 
+  // State for search results and UI status
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
+  // Check if user has location data for distance-based search
   useEffect(() => {
     if (!user?.location) {
       setError("לא נמצאו נתוני מיקום. חלק מהתכונות עלולות להיות מוגבלות.");
     }
   }, [user]);
 
+  // Fetch books based on current filters
   const fetchBooks = async () => {
     try {
       setLoading(true);
       setError("");
       const params = new URLSearchParams(filters);
 
+      // Add user location for distance-based search if available
       if (user?.location?.lat && user?.location?.lng) {
         const lat = parseFloat(user.location.lat);
         const lng = parseFloat(user.location.lng);
@@ -57,18 +74,28 @@ export default function Search() {
     }
   };
 
+  // Fetch books whenever filters change
   useEffect(() => {
     fetchBooks();
   }, [filters]);
 
+  // Handle changes in filter inputs
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
+  // Handle book reservation
   const handleReserve = async (bookId) => {
     if (!user) {
       setError("עליך להתחבר כדי לשריין ספר");
+      return;
+    }
+
+    // Check if the book belongs to the logged in user
+    const book = results.find(book => book._id === bookId);
+    if (book && book.userId === user._id) {
+      setError("לא ניתן לשריין ספר שתרמת בעצמך");
       return;
     }
 
@@ -84,14 +111,19 @@ export default function Search() {
 
       if (!response.ok) throw new Error("שגיאה בשריון הספר");
 
-      fetchBooks();
+      fetchBooks(); // Refresh results after reservation
     } catch (error) {
       console.error("שגיאה בעת שריון ספר:", error);
       setError(error.message);
     }
   };
 
+  // Navigate to chat with book donor
   const handleChat = (donorId) => {
+    if (donorId === user?._id) {
+      setError("לא ניתן לפתוח צ'אט עם עצמך");
+      return;
+    }
     navigate("/chat", { state: { selectedUserId: donorId } });
   };
 
@@ -99,6 +131,7 @@ export default function Search() {
     <div className="md-container">
       <div className="search-page">
         <div className="md-card search-container">
+          {/* Header section with title and results count */}
           <div className="search-header">
             <span className="material-icons">search</span>
             <h1 className="md-text-xl">חיפוש ספרים לתרומה</h1>
@@ -109,6 +142,7 @@ export default function Search() {
             )}
           </div>
 
+          {/* Error message display */}
           {error && (
             <div className="md-status md-status-error">
               <span className="material-icons">error</span>
@@ -116,7 +150,9 @@ export default function Search() {
             </div>
           )}
 
+          {/* Search filters section */}
           <div className="search-filters md-grid">
+            {/* Book title filter */}
             <div className="md-input-group">
               <span className="material-icons md-input-icon">book</span>
               <input
@@ -128,6 +164,7 @@ export default function Search() {
                 onChange={handleChange}
               />
             </div>
+            {/* Author filter */}
             <div className="md-input-group">
               <span className="material-icons md-input-icon">person</span>
               <input
@@ -139,6 +176,7 @@ export default function Search() {
                 onChange={handleChange}
               />
             </div>
+            {/* Grade filter */}
             <div className="md-input-group">
               <span className="material-icons md-input-icon">school</span>
               <input
@@ -150,6 +188,7 @@ export default function Search() {
                 onChange={handleChange}
               />
             </div>
+            {/* Book condition filter */}
             <div className="md-input-group">
               <span className="material-icons md-input-icon">star_rate</span>
               <select
@@ -166,21 +205,27 @@ export default function Search() {
             </div>
           </div>
 
+          {/* Search results section */}
           <div className="search-results">
+            {/* Loading state */}
             {loading ? (
               <div className="md-loading">
                 <div className="md-loading-spinner" />
                 <span>טוען ספרים...</span>
               </div>
             ) : results.length > 0 ? (
+              // Grid of book results
               <div className="books-grid">
                 {results.map((book) => (
+                  // Individual book card
                   <div key={book._id} className="book-card">
                     <div className="book-card__content">
+                      {/* Book main information */}
                       <div className="book-card__main-info">
                         <h3 className="book-card__title">{book.bookTitle}</h3>
 
                         <div className="book-card__content-wrapper">
+                          {/* Book image section */}
                           <div className="book-card__image-container">
                             {book.imgUrl ? (
                               <img
@@ -195,20 +240,25 @@ export default function Search() {
                             )}
                           </div>
 
+                          {/* Book details section */}
                           <div className="book-card__details">
+                            {/* Donor information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__label">תורם: </span>
-                              <span className="book-card__value" style={{ color: '#10b981', fontWeight: 600 }}>
+                              <span className="book-card__value" style={{ color: book.userId === user?._id ? '#ef4444' : '#10b981', fontWeight: 600 }}>
                                 {book.username || "משתמש לא ידוע"}
+                                {book.userId === user?._id && " (אתה)"}
                               </span>
                             </div>
 
+                            {/* Author information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__value">
                                 {book.author}
                               </span>
                             </div>
 
+                            {/* Grade information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__label">כיתה: </span>
                               <span className="book-card__value">
@@ -216,6 +266,7 @@ export default function Search() {
                               </span>
                             </div>
 
+                            {/* City information */}
                             <div className="book-card__detail-row">
                               <span className="book-card__label">עיר: </span>
                               <span className="book-card__value">
@@ -225,6 +276,7 @@ export default function Search() {
                           </div>
                         </div>
 
+                        {/* Book condition and distance tags */}
                         <div className="book-card__tags">
                           <span className="book-card__condition-tag">
                             <span className="book-card__tag-label">מצב: </span>
@@ -239,7 +291,9 @@ export default function Search() {
                         </div>
                       </div>
 
+                      {/* Action buttons section */}
                       <div className="book-card__actions">
+                        {/* Reserve book button */}
                         <button
                           className="book-card__button book-card__button--primary"
                           onClick={() => handleReserve(book._id)}
@@ -247,6 +301,7 @@ export default function Search() {
                           <span className="material-icons">bookmark</span>
                           שריין ספר
                         </button>
+                        {/* Chat with donor button */}
                         <button
                           className="book-card__button book-card__button--secondary"
                           onClick={() => handleChat(book.userId)}

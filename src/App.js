@@ -13,7 +13,7 @@ import Upload from "./pages/Upload";
 import Search from "./pages/Search";
 import Wishlist from "./pages/Wishlist";
 import ReservedBooks from "./pages/ReservedBooks";
-import Chat from "./components/Chat";
+import Chat from "./pages/Chat";
 import "./App.css";
 
 // Protected Route Component

@@ -1,36 +1,46 @@
-// Home Page Component
-// This component serves as the landing page after login
-// It displays a welcome message and information about the BookIt platform
+/**
+ * Home Page Component
+ * 
+ * This is the main landing page of the BookIt application.
+ * It serves as a welcoming interface for users after login, displaying:
+ * - Personalized welcome message
+ * - Platform statistics
+ * - Key features
+ * - Call-to-action buttons for main functionalities
+ */
 
 import React, { useState } from "react";
 import { useUser } from "../context/UserContext";
 import { useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
 import "../styles/theme.css";
-import "../styles/home.css";
+import "../styles/Home.css";
 
 function HomePage() {
+  // Get user context and navigation utility
   const { user } = useUser();
   const navigate = useNavigate();
+  
+  // State for card entrance animation
   const [cardAnimation, setCardAnimation] = useState(false);
 
-  // Trigger animation on page load
+  // Trigger entrance animation on component mount
   React.useEffect(() => {
     setCardAnimation(true);
   }, []);
 
-  // Navigation handlers
+  // Navigation handler functions
   const handleSearchClick = () => {
-    navigate("/search");
+    navigate("/search"); // Navigate to book search page
   };
 
   const handleUploadClick = () => {
-    navigate("/upload");
+    navigate("/upload"); // Navigate to book donation page
   };
 
   return (
     <div className="home-page">
-      {/* Background elements */}
+      {/* Decorative background shapes for visual interest */}
       <div className="home-background">
         <div className="bg-shapes">
           <div className="shape shape-1"></div>
@@ -41,12 +51,13 @@ function HomePage() {
       </div>
 
       <div className="container">
+        {/* Main content card with entrance animation */}
         <div
           className={`home-card card elevation-1 ${
             cardAnimation ? "animate-in" : ""
           }`}
         >
-          {/* Header section with logo and welcome message */}
+          {/* Header Section: Logo and Welcome Message */}
           <div className="home-header">
             <div className="home-logo-container">
               <div className="home-logo-wrapper">
@@ -55,6 +66,7 @@ function HomePage() {
               </div>
             </div>
 
+            {/* Personalized welcome message */}
             <div className="home-welcome-container">
               <h2 className="home-welcome" dir="rtl">
                 שלום, {user?.username || "משתמש"}!
@@ -63,7 +75,7 @@ function HomePage() {
             </div>
           </div>
 
-          {/* Hero section */}
+          {/* Hero Section: Main value proposition */}
           <div className="home-hero">
             <h1 className="home-title" dir="rtl">
               הפלטפורמה המובילה לשיתוף ספרי לימוד
@@ -74,7 +86,7 @@ function HomePage() {
             </p>
           </div>
 
-          {/* Statistics section */}
+          {/* Statistics Section: Platform impact metrics */}
           <div className="home-stats">
             <div className="stat-card">
               <div className="stat-number">1,200+</div>
@@ -90,8 +102,9 @@ function HomePage() {
             </div>
           </div>
 
-          {/* Features section */}
+          {/* Features Section: Key platform capabilities */}
           <div className="home-features">
+            {/* Search and Donate Feature */}
             <div className="feature-card">
               <div className="feature-icon-wrapper">
                 <div className="feature-icon-bg">
@@ -108,6 +121,7 @@ function HomePage() {
               <div className="feature-decoration"></div>
             </div>
 
+            {/* Smart Recycling Feature */}
             <div className="feature-card">
               <div className="feature-icon-wrapper">
                 <div className="feature-icon-bg">
@@ -119,6 +133,7 @@ function HomePage() {
               <div className="feature-decoration"></div>
             </div>
 
+            {/* Local Community Feature */}
             <div className="feature-card">
               <div className="feature-icon-wrapper">
                 <div className="feature-icon-bg">
@@ -133,12 +148,13 @@ function HomePage() {
             </div>
           </div>
 
-          {/* Call to action */}
+          {/* Call to Action Section: Primary user actions */}
           <div className="home-cta">
             <div className="cta-content">
               <h2>מוכנים להתחיל?</h2>
               <p>בואו נעשה את הדרך לחינוך איכותי נגישה לכולם</p>
               <div className="cta-buttons">
+                {/* Search Books CTA Button */}
                 <button
                   className="btn-primary cta-btn"
                   onClick={handleSearchClick}
@@ -146,6 +162,7 @@ function HomePage() {
                   <span className="material-icons">search</span>
                   חפש ספרים
                 </button>
+                {/* Donate Books CTA Button */}
                 <button
                   className="btn-secondary cta-btn"
                   onClick={handleUploadClick}
@@ -155,6 +172,7 @@ function HomePage() {
                 </button>
               </div>
             </div>
+            {/* Decorative floating books animation */}
             <div className="cta-visual">
               <div className="floating-books">
                 <div className="book book-1">📚</div>

@@ -8,52 +8,59 @@ import { useUser } from "../context/UserContext";
 import axios from "axios";
 import { useLocation } from "react-router-dom";
 import "../styles/components.css";
+import "../styles/Chat.css";
 
 const API_BASE = process.env.REACT_APP_API_BASE;
 
 function Chat() {
+  // Get current user and location state (for direct messages from search)
   const { user } = useUser();
   const location = useLocation();
   const selectedUserIdFromSearch = location.state?.selectedUserId || null;
 
-  const [message, setMessage] = useState("");
-  const [chatMessages, setChatMessages] = useState([]);
-  const [socket, setSocket] = useState(null);
-  const [selectedUser, setSelectedUser] = useState(null);
-  const [users, setUsers] = useState([]);
-  const [recentChats, setRecentChats] = useState([]);
-  const [roomId, setRoomId] = useState(null);
-  const messagesEndRef = useRef(null);
-  const [isOpen, setIsOpen] = useState(false);
+  // State management for chat functionality
+  const [message, setMessage] = useState(""); // Current message input
+  const [chatMessages, setChatMessages] = useState([]); // All messages in current chat
+  const [socket, setSocket] = useState(null); // Socket.io connection
+  const [selectedUser, setSelectedUser] = useState(null); // Currently selected chat user
+  const [recentChats, setRecentChats] = useState([]); // List of recent chat users
+  const [roomId, setRoomId] = useState(null); // Current chat room ID
+  const messagesEndRef = useRef(null); // Reference for auto-scrolling
+  const [isOpen, setIsOpen] = useState(false); // Dropdown state for user selection
 
+  // Initialize Socket.IO connection
   useEffect(() => {
     const newSocket = io(process.env.REACT_APP_SOCKET_URL, {
       transports: ["websocket"],
     });
     setSocket(newSocket);
 
+    // Listen for incoming messages
     newSocket.on("receive_private_message", (data) => {
-      console.log("📥 התקבלה הודעה:", data);
+      console.log("📥 Message received:", data);
       if (data.roomId === roomId && data.sender !== user?.username) {
         setChatMessages((prev) => [...prev, data]);
       }
     });
 
+    // Handle connection errors
     newSocket.on("connect_error", (err) => {
-      console.error("❌ שגיאה בהתחברות ל-socket:", err);
+      console.error("❌ Socket connection error:", err);
     });
 
+    // Cleanup on unmount
     return () => {
       newSocket.disconnect();
     };
   }, [roomId, user?.username]);
 
+  // Fetch all users and handle direct message from search
   useEffect(() => {
     const fetchUsers = async () => {
       try {
         const response = await axios.get(`${API_BASE}/api/users`);
         const filteredUsers = response.data.filter((u) => u._id !== user?._id);
-        setUsers(filteredUsers);
+        // If user came from search with a specific user selected
         if (selectedUserIdFromSearch) {
           const found = filteredUsers.find(
             (u) => u._id === selectedUserIdFromSearch
@@ -61,7 +68,7 @@ function Chat() {
           if (found) setSelectedUser(found);
         }
       } catch (error) {
-        console.error("שגיאה בשליפת משתמשים:", error);
+        console.error("Error fetching users:", error);
       }
     };
     if (user) {
@@ -69,6 +76,7 @@ function Chat() {
     }
   }, [user, selectedUserIdFromSearch]);
 
+  // Fetch recent chat history
   useEffect(() => {
     const fetchRecentChats = async () => {
       try {
@@ -77,7 +85,7 @@ function Chat() {
         );
         setRecentChats(response.data);
       } catch (error) {
-        console.error("שגיאה בשליפת שיחות אחרונות:", error);
+        console.error("Error fetching recent chats:", error);
       }
     };
     if (user) {
@@ -85,6 +93,7 @@ function Chat() {
     }
   }, [user]);
 
+  // Join chat rooms for all recent chats
   useEffect(() => {
     if (socket && user && recentChats.length > 0) {
       recentChats.forEach((chatUser) => {
@@ -96,8 +105,10 @@ function Chat() {
     }
   }, [socket, user, recentChats]);
 
+  // Handle user selection and room joining
   useEffect(() => {
     if (socket && selectedUser && user) {
+      // Create unique room ID by sorting user IDs
       const newRoomId = [user._id, selectedUser._id].sort().join("_");
       setRoomId(newRoomId);
       socket.emit("join_private_chat", {
@@ -108,6 +119,7 @@ function Chat() {
     }
   }, [selectedUser, socket, user]);
 
+  // Fetch message history for selected chat
   const fetchMessages = async (roomId) => {
     try {
       const response = await axios.get(
@@ -115,14 +127,16 @@ function Chat() {
       );
       setChatMessages(response.data);
     } catch (error) {
-      console.error("שגיאה בטעינת הודעות קודמות:", error);
+      console.error("Error loading message history:", error);
     }
   };
 
+  // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [chatMessages]);
 
+  // Handle sending new messages
   const sendMessage = () => {
     if (!socket || !roomId || !user || !selectedUser || message.trim() === "")
       return;
@@ -135,12 +149,11 @@ function Chat() {
     };
     
     socket.emit("send_private_message", newMessage);
-    
     setChatMessages(prev => [...prev, newMessage]);
-    
     setMessage("");
   };
 
+  // Group messages by date for display
   const groupedMessages = chatMessages.reduce((acc, msg) => {
     const dateKey = new Date(msg.timestamp).toLocaleDateString();
     if (!acc[dateKey]) acc[dateKey] = [];
@@ -148,75 +161,12 @@ function Chat() {
     return acc;
   }, {});
 
+  // Component render
   return (
     <div className="chat-wrapper">
       <div className="chat-container">
+        {/* Sidebar with user selection */}
         <aside className="chat-sidebar">
-          <style>{`
-            @media (max-width: 600px) {
-              .chat-dropdown-btn, .chat-dropdown-list {
-                width: 100% !important;
-                min-width: 0 !important;
-                max-width: 100vw !important;
-                margin: 0 !important;
-                border-radius: 10px !important;
-                font-size: 15px !important;
-                padding: 10px 8px !important;
-              }
-              .chat-dropdown-btn {
-                padding: 10px 8px !important;
-                font-size: 15px !important;
-              }
-              .chat-dropdown-list {
-                display: none !important;
-              }
-              .chat-modal-list {
-                display: block !important;
-                position: fixed !important;
-                top: 0 !important;
-                left: 0 !important;
-                right: 0 !important;
-                bottom: 0 !important;
-                background: var(--background, #fff) !important;
-                z-index: 9999 !important;
-                border-radius: 0 !important;
-                margin: 0 !important;
-                box-shadow: none !important;
-                padding: 0 !important;
-                max-width: 100vw !important;
-                min-width: 0 !important;
-                overflow-y: auto !important;
-                direction: rtl;
-              }
-              .chat-modal-header {
-                display: flex;
-                align-items: center;
-                justify-content: space-between;
-                padding: 18px 16px 8px 16px;
-                background: none;
-                font-size: 18px;
-                font-weight: 600;
-              }
-              .chat-modal-close {
-                cursor: pointer;
-                color: var(--text-secondary, #888);
-                font-size: 26px;
-              }
-              .chat-modal-bubbles {
-                padding: 16px 8px 24px 8px;
-                max-height: calc(100vh - 60px);
-                overflow-y: auto;
-              }
-              .chat-dropdown-bubble {
-                font-size: 15px !important;
-                padding: 12px 10px !important;
-                border-radius: 14px !important;
-              }
-              .chat-dropdown-bubble span {
-                font-size: 13px !important;
-              }
-            }
-          `}</style>
           <div
             style={{
               position: "relative",
@@ -224,6 +174,7 @@ function Chat() {
               marginBottom: "12px",
             }}
           >
+            {/* User selection dropdown button */}
             <button
               className="chat-dropdown-btn"
               onClick={() => setIsOpen(!isOpen)}
@@ -293,6 +244,7 @@ function Chat() {
                   direction: "rtl",
                 }}
               >
+                {/* Recent chat users list */}
                 {recentChats.map((chatUser) => (
                   <button
                     key={chatUser._id}
@@ -433,13 +385,16 @@ function Chat() {
           </div>
         </aside>
 
+        {/* Main chat area */}
         <main className="chat-main">
+          {/* Chat header */}
           <div className="chat-header">
             {selectedUser
               ? `משוחח עם: ${selectedUser.username} (${selectedUser.city})`
               : "לא נבחר משתמש"}
           </div>
 
+          {/* Messages display */}
           <div className="chat-messages">
             {Object.entries(groupedMessages).map(([dateStr, messages]) => (
               <div key={dateStr}>
@@ -468,6 +423,7 @@ function Chat() {
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Message input */}
           <div className="chat-input">
             <input
               type="text"
@@ -480,135 +436,6 @@ function Chat() {
           </div>
         </main>
       </div>
-
-      <style>{`
-        .chat-wrapper {
-          direction: rtl;
-          height: 100vh;
-          display: flex;
-          justify-content: center;
-           padding-top: 60px;
-        }
-        .chat-container {
-          display: flex;
-          direction: rtl;
-          flex-direction: row-reverse;
-          width: 100%;
-          max-width: 1200px;
-          border: 1px solid #ddd;
-          height: 100%;
-        }
-        .chat-sidebar {
-          width: 25%;
-          background: #f5f5f5;
-          padding: 10px;
-          overflow-y: auto;
-        }
-        .chat-sidebar ul {
-          list-style: none;
-          padding: 0;
-        }
-        .chat-sidebar button {
-          width: 100%;
-          margin-bottom: 8px;
-          padding: 8px;
-          text-align: right;
-          border: 1px solid #ccc;
-          border-radius: 8px;
-          background: #fff;
-        }
-        .chat-sidebar button.active {
-          font-weight: bold;
-          background: #e0f7fa;
-        }
-        .chat-main {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          padding: 10px;
-          overflow: hidden;
-        }
-        .chat-header {
-          padding: 12px;
-          background: #e0f7fa;
-          border: 1px solid #ccc;
-          border-radius: 10px;
-          margin-bottom: 10px;
-        }
-        .chat-messages {
-          flex: 1;
-          overflow-y: auto;
-          padding: 10px;
-          background: #f9f9f9;
-        }
-        .chat-date-separator {
-          text-align: center;
-          margin: 10px 0;
-          color: #888;
-          font-size: 0.85em;
-        }
-        .chat-message {
-          display: flex;
-          margin-bottom: 10px;
-        }
-        .chat-message.sent {
-          justify-content: flex-start;
-        }
-        .chat-message.received {
-          justify-content: flex-end;
-        }
-        .chat-bubble {
-          max-width: 70%;
-          padding: 8px 12px;
-          border-radius: 15px;
-          background: #dcf8c6;
-          border: 1px solid #ccc;
-          text-align: right;
-        }
-        .chat-message.received .chat-bubble {
-          background: #fff;
-        }
-        .chat-time {
-          font-size: 0.8em;
-          color: #666;
-          margin-top: 4px;
-        }
-        .chat-input {
-          display: flex;
-          gap: 10px;
-          padding: 10px;
-          border-top: 2px solid #ddd;
-          background: #fff;
-          justify-content: flex-end;
-        }
-        .chat-input input {
-          flex: 1;
-          padding: 8px;
-          border-radius: 20px;
-          border: 1px solid #ccc;
-        }
-        .chat-input button {
-          padding: 8px 20px;
-          background: #4CAF50;
-          color: white;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-        }
-
-        @media (max-width: 768px) {
-          .chat-container {
-            flex-direction: column;
-          }
-          .chat-sidebar {
-            width: 100%;
-            border-bottom: 1px solid #ccc;
-          }
-          .chat-main {
-            height: 100%;
-          }
-        }
-      `}</style>
     </div>
   );
 }

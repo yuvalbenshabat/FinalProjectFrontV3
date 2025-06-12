@@ -14,7 +14,6 @@ export default function Wishlist() {
   const [newChildName, setNewChildName] = useState("");
   const [newChildGrade, setNewChildGrade] = useState("");
   const [bookOptions, setBookOptions] = useState([]);
-  const [booksLoading, setBooksLoading] = useState(true);
   const [selectedBooks, setSelectedBooks] = useState({});
   const [searchTerms, setSearchTerms] = useState({});
   const [activeChildId, setActiveChildId] = useState(null);
@@ -29,11 +28,9 @@ export default function Wishlist() {
       .get(`${API_BASE}/api/books`)
       .then((res) => {
         setBookOptions(res.data);
-        setBooksLoading(false);
       })
       .catch((err) => {
         console.error("שגיאה בטעינת ספרים:", err);
-        setBooksLoading(false);
       });
   }, []);
 
